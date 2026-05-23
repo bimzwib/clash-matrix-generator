@@ -1,1 +1,1048 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BIMZ Clash Matrix Generator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap');
 
+  :root {
+    --bg:       #0a0e1a;
+    --surface:  #111827;
+    --card:     #161d2e;
+    --border:   #1e2d45;
+    --accent:   #00d4ff;
+    --accent2:  #0077ff;
+    --text:     #c8d8f0;
+    --muted:    #4a6080;
+    --green:    #00e676;
+    --yellow:   #ffd600;
+    --orange:   #ff6d00;
+    --red:      #ff1744;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+
+  /* Header */
+  header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 32px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo-box {
+    width: 48px; height: 48px;
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: 700; color: #fff;
+    font-family: 'Share Tech Mono', monospace;
+    flex-shrink: 0;
+  }
+
+  header h1 {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: #fff;
+  }
+
+  header h1 span { color: var(--accent); }
+
+  .version-tag {
+    margin-left: auto;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    border-radius: 4px;
+  }
+
+  /* Upload Zone */
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 16px;
+    padding: 48px 32px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: var(--card);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .upload-zone::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, rgba(0,212,255,0.05) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--accent);
+    background: rgba(0,212,255,0.05);
+  }
+
+  .upload-zone:hover::before, .upload-zone.drag-over::before {
+    opacity: 1;
+  }
+
+  .upload-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    display: block;
+    filter: drop-shadow(0 0 12px rgba(0,212,255,0.4));
+  }
+
+  .upload-zone h2 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+  }
+
+  .upload-zone p {
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .upload-zone p strong { color: var(--accent); }
+
+  #fileInput { display: none; }
+
+  /* File list */
+  #fileList {
+    margin-top: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+  }
+
+  .file-tag {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-family: 'Share Tech Mono', monospace;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--accent);
+    animation: fadeIn 0.3s ease;
+  }
+
+  .file-tag .remove-btn {
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 16px;
+    line-height: 1;
+    transition: color 0.2s;
+  }
+  .file-tag .remove-btn:hover { color: var(--red); }
+
+  /* Controls */
+  .controls {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .btn {
+    padding: 12px 28px;
+    border-radius: 8px;
+    border: none;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    color: #fff;
+    box-shadow: 0 0 20px rgba(0,212,255,0.2);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 24px rgba(0,212,255,0.4);
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn-excel {
+    background: linear-gradient(135deg, #1d6f42, #21a366);
+    color: #fff;
+    box-shadow: 0 0 20px rgba(33,163,102,0.2);
+  }
+
+  .btn-excel:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 24px rgba(33,163,102,0.4);
+  }
+
+  .btn-clear {
+    background: var(--surface);
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .btn-clear:hover { color: var(--red); border-color: var(--red); }
+
+  /* Mode selector */
+  .mode-selector {
+    display: flex;
+    gap: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-left: auto;
+  }
+
+  .mode-btn {
+    padding: 10px 18px;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .mode-btn.active {
+    background: var(--accent2);
+    color: #fff;
+  }
+
+  /* Stats bar */
+  #statsBar {
+    display: none;
+    gap: 12px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 20px;
+    flex: 1;
+    min-width: 120px;
+    text-align: center;
+    animation: fadeIn 0.4s ease;
+  }
+
+  .stat-card .stat-num {
+    font-size: 28px;
+    font-weight: 700;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  .stat-card .stat-label {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  .stat-num.total { color: var(--accent); }
+  .stat-num.new-c { color: var(--red); }
+  .stat-num.active-c { color: var(--orange); }
+  .stat-num.reviewed-c { color: var(--yellow); }
+  .stat-num.resolved-c { color: var(--green); }
+
+  /* Matrix */
+  #matrixSection {
+    display: none;
+    margin-top: 28px;
+    animation: fadeIn 0.5s ease;
+  }
+
+  .section-title {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, var(--border), transparent);
+  }
+
+  .matrix-wrapper {
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+  }
+
+  /* ── Matrix Table — light/Excel-style ── */
+  .matrix-wrapper {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #ccd6e0;
+    overflow: visible;
+  }
+
+  #matrixTable {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 400px;
+    background: #fff;
+  }
+
+  #matrixTable th, #matrixTable td {
+    border: 1px solid #b0bec5;
+    text-align: center;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    min-width: 70px;
+  }
+
+  /* Rotated column header */
+  #matrixTable th.col-header {
+    padding: 0;
+    height: 110px;
+    vertical-align: bottom;
+    background: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border-bottom: 2px solid #78909c;
+  }
+
+  #matrixTable th.col-header .rotated-wrap {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    height: 100%;
+    padding-bottom: 6px;
+  }
+
+  #matrixTable th.col-header span {
+    display: inline-block;
+    transform: rotate(-90deg);
+    transform-origin: center center;
+    white-space: nowrap;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    padding: 4px 6px;
+    border-radius: 4px;
+    color: #fff;
+  }
+
+  #matrixTable th.row-label {
+    background: #f0f4f8;
+    color: #37474f;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    min-width: 120px;
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 2px solid #78909c;
+  }
+
+  #matrixTable td {
+    padding: 14px 10px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 18px;
+    font-weight: 800;
+    transition: all 0.15s;
+    position: relative;
+    cursor: default;
+    height: 56px;
+  }
+
+  #matrixTable td:hover {
+    filter: brightness(0.9);
+    z-index: 1;
+  }
+
+  /* Cell colors — solid like Excel */
+  .cell-diag {
+    background: #b0bec5 !important;
+    background-image: repeating-linear-gradient(
+      45deg, rgba(0,0,0,0.06) 0px, rgba(0,0,0,0.06) 4px,
+      transparent 4px, transparent 10px
+    ) !important;
+  }
+
+  .cell-zero   { background: #00C853; color: #fff; }
+  .cell-low    { background: #FFD600; color: #333; }
+  .cell-medium { background: #FF6D00; color: #fff; }
+  .cell-high   { background: #FF1744; color: #fff; }
+
+  .cell-na {
+    background: #cfd8dc;
+    color: #90a4ae;
+    font-size: 18px;
+  }
+
+  /* Row label cell — colored per discipline */
+  #matrixTable td.label-cell {
+    text-align: left;
+    padding-left: 14px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    color: #fff;
+    border-right: 2px solid #78909c;
+  }
+
+  /* Tooltip */
+  .cell-tooltip {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 13px;
+    white-space: nowrap;
+    z-index: 100;
+    color: var(--text);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    pointer-events: none;
+    line-height: 1.8;
+    text-align: left;
+  }
+
+  #matrixTable td:hover .cell-tooltip { display: block; }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+    padding: 14px 18px;
+    background: #fff;
+    border: 1px solid #ccd6e0;
+    border-radius: 10px;
+    align-items: center;
+  }
+
+  .legend-label {
+    font-size: 12px;
+    color: #546e7a;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-right: 4px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #37474f;
+    font-weight: 600;
+  }
+
+  .legend-dot {
+    width: 18px; height: 18px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    border: 1px solid rgba(0,0,0,0.15);
+  }
+
+  /* Error / info messages */
+  .msg {
+    padding: 12px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-top: 12px;
+    display: none;
+  }
+
+  .msg-error { background: rgba(255,23,68,0.1); border: 1px solid rgba(255,23,68,0.3); color: var(--red); }
+  .msg-info  { background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.3); color: var(--accent); }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(0,212,255,0.3); }
+    50%      { box-shadow: 0 0 0 8px rgba(0,212,255,0); }
+  }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    header h1 { font-size: 18px; }
+    .controls { flex-direction: column; }
+    .mode-selector { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <header>
+    <div class="logo-box">BZ</div>
+    <div>
+      <h1>BIMZ <span>CLASH MATRIX</span></h1>
+      <div style="font-size:12px;color:var(--muted);letter-spacing:1px;margin-top:2px;">NAVISWORKS CLASH REPORT ANALYZER</div>
+    </div>
+    <div class="version-tag">v2.0 · by ZIAD ANTER</div>
+  </header>
+
+  <!-- Upload Zone -->
+  <div class="upload-zone" id="uploadZone">
+    <span class="upload-icon">⚡</span>
+    <h2>DROP NAVISWORKS HTML REPORTS HERE</h2>
+    <p>Upload <strong>multiple HTML clash reports</strong> at once — one per discipline pair.<br>
+       Each file = one cell in the matrix (e.g. <strong>CHW_VS_DR.html</strong>, <strong>HVAC_VS_FF.html</strong>)</p>
+    <input type="file" id="fileInput" multiple accept=".html,.htm">
+    <div id="fileList"></div>
+  </div>
+
+  <!-- Messages -->
+  <div class="msg msg-error" id="msgError"></div>
+  <div class="msg msg-info"  id="msgInfo"></div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <button class="btn btn-primary" id="buildBtn" disabled onclick="buildMatrix()">
+      ⚙ BUILD MATRIX
+    </button>
+    <button class="btn btn-excel" id="exportBtn" style="display:none" onclick="exportExcel()">
+      📊 EXPORT EXCEL
+    </button>
+    <button class="btn btn-clear" onclick="clearAll()">✕ CLEAR</button>
+
+    <div class="mode-selector" id="modeSelector" style="display:none">
+      <button class="mode-btn active" onclick="setMode('open')"    id="mode-open">NEW+ACTIVE</button>
+      <button class="mode-btn"        onclick="setMode('total')"   id="mode-total">TOTAL</button>
+      <button class="mode-btn"        onclick="setMode('resolved')" id="mode-resolved">RESOLVED</button>
+    </div>
+  </div>
+
+  <!-- Stats Bar -->
+  <div id="statsBar" style="display:flex">
+    <div class="stat-card"><div class="stat-num total" id="st-total">—</div><div class="stat-label">Total Clashes</div></div>
+    <div class="stat-card"><div class="stat-num new-c" id="st-new">—</div><div class="stat-label">New</div></div>
+    <div class="stat-card"><div class="stat-num active-c" id="st-active">—</div><div class="stat-label">Active</div></div>
+    <div class="stat-card"><div class="stat-num reviewed-c" id="st-reviewed">—</div><div class="stat-label">Reviewed</div></div>
+    <div class="stat-card"><div class="stat-num resolved-c" id="st-resolved">—</div><div class="stat-label">Resolved</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--accent)" id="st-pairs">—</div><div class="stat-label">Clash Tests</div></div>
+  </div>
+
+  <!-- Matrix -->
+  <div id="matrixSection">
+    <div class="section-title">CLASH MATRIX</div>
+    <div class="matrix-wrapper">
+      <table id="matrixTable"></table>
+    </div>
+
+    <!-- Legend -->
+    <div class="legend">
+      <span class="legend-label">Legend (New + Active):</span>
+      <div class="legend-item"><div class="legend-dot" style="background:#00C853"></div><span>0 — No Clash</span></div>
+      <div class="legend-item"><div class="legend-dot" style="background:#FFD600"></div><span>1–10 — Low</span></div>
+      <div class="legend-item"><div class="legend-dot" style="background:#FF6D00"></div><span>11–50 — Medium</span></div>
+      <div class="legend-item"><div class="legend-dot" style="background:#FF1744"></div><span>&gt;50 — High</span></div>
+      <div class="legend-item" style="margin-left:auto">
+        <span style="font-size:12px;color:var(--muted)">Hover cell for details</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ── State ────────────────────────────────────────────────────────────────────
+  let uploadedFiles = [];
+  let parsedData    = [];
+  let currentMode   = 'open'; // open = New + Active
+  let disciplines   = [];
+
+  // ── Upload Handling ──────────────────────────────────────────────────────────
+  const uploadZone = document.getElementById('uploadZone');
+  const fileInput  = document.getElementById('fileInput');
+
+  uploadZone.addEventListener('click', e => { if (e.target === uploadZone || e.target.tagName !== 'BUTTON') fileInput.click(); });
+  uploadZone.addEventListener('dragover',  e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+  uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+  uploadZone.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadZone.classList.remove('drag-over');
+    handleFiles([...e.dataTransfer.files]);
+  });
+  fileInput.addEventListener('change', e => handleFiles([...e.target.files]));
+
+  function handleFiles(files) {
+    const html = files.filter(f => f.name.match(/\.html?$/i));
+    if (!html.length) { showMsg('error', 'Please upload .html files exported from Navisworks Clash Detective.'); return; }
+
+    html.forEach(f => {
+      if (!uploadedFiles.find(x => x.name === f.name)) uploadedFiles.push(f);
+    });
+
+    renderFileList();
+    document.getElementById('buildBtn').disabled = uploadedFiles.length === 0;
+    hideMsg();
+  }
+
+  function renderFileList() {
+    const list = document.getElementById('fileList');
+    list.innerHTML = uploadedFiles.map((f, i) => `
+      <div class="file-tag">
+        📄 ${f.name}
+        <span class="remove-btn" onclick="removeFile(${i})">×</span>
+      </div>
+    `).join('');
+  }
+
+  function removeFile(idx) {
+    uploadedFiles.splice(idx, 1);
+    renderFileList();
+    document.getElementById('buildBtn').disabled = uploadedFiles.length === 0;
+    if (uploadedFiles.length === 0) clearMatrix();
+  }
+
+  // ── HTML Parser ──────────────────────────────────────────────────────────────
+
+  // Decode HTML entities: &amp; → &, &lt; → <, etc.
+  function decodeEntities(str) {
+    return str
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g,  '<')
+      .replace(/&gt;/g,  '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "\'");
+  }
+
+  // Split a test name into [d1, d2]
+  function parseDisciplines(tName, fName) {
+    // 1) VS in test name
+    let p = tName.split(/\s+VS\s+/i);
+    if (p.length >= 2 && p[1].trim()) return [p[0].trim(), p[1].trim()];
+
+    // 2) & in test name (e.g. "AR&EL")
+    p = tName.split('&');
+    if (p.length >= 2 && p[1].trim()) return [p[0].trim(), p[1].trim()];
+
+    // 3) VS in filename
+    const base = fName.replace(/\.html?$/i, '');
+    p = base.split(/\s+VS\s+/i);
+    if (p.length >= 2 && p[1].trim()) return [p[0].trim(), p[1].trim()];
+
+    // 4) & _ - + in filename
+    const parts2 = base.split(/[&_\-+]+/);
+    if (parts2.length >= 2 && parts2[parts2.length - 1].trim())
+      return [parts2[0].trim(), parts2[parts2.length - 1].trim()];
+
+    return [tName, tName];
+  }
+
+  // Parse a single testSummaryTable block
+  function parseSummaryBlock(block, fileName) {
+    const nameMatch = block.match(/class="testName"[^>]*>([^<]+)/);
+    if (!nameMatch) return null;
+    const testName = decodeEntities(nameMatch[1].trim());
+
+    const summaryMatch = block.match(
+      /contentCell">[^<]*<\/td>\s*<td[^>]*contentCell">(\d+)<\/td>\s*<td[^>]*contentCell">(\d+)<\/td>\s*<td[^>]*contentCell">(\d+)<\/td>\s*<td[^>]*contentCell">(\d+)<\/td>\s*<td[^>]*contentCell">(\d+)<\/td>\s*<td[^>]*contentCell">(\d+)<\/td>/
+    );
+
+    let total=0, newC=0, active=0, reviewed=0, approved=0, resolved=0;
+    if (summaryMatch) {
+      total    = parseInt(summaryMatch[1]) || 0;
+      newC     = parseInt(summaryMatch[2]) || 0;
+      active   = parseInt(summaryMatch[3]) || 0;
+      reviewed = parseInt(summaryMatch[4]) || 0;
+      approved = parseInt(summaryMatch[5]) || 0;
+      resolved = parseInt(summaryMatch[6]) || 0;
+    }
+
+    const [d1, d2] = parseDisciplines(testName, fileName);
+    return { testName, d1, d2, total, new: newC, active, reviewed, approved, resolved };
+  }
+
+  // Main parser — returns ARRAY (supports single & combined files)
+  function parseClashHTML(html, name) {
+    const blocks = html.split(/(?=<table[^>]*class="testSummaryTable")/i);
+    const results = [];
+    blocks.forEach(block => {
+      if (!block.includes('testName')) return;
+      const r = parseSummaryBlock(block, name);
+      if (r) results.push(r);
+    });
+    return results.length ? results : null;
+  }
+
+  // ── Build Matrix ─────────────────────────────────────────────────────────────
+  async function buildMatrix() {
+    parsedData = [];
+
+    const reads = uploadedFiles.map(f => new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload  = e => res({ name: f.name, html: e.target.result });
+      r.onerror = () => rej(f.name);
+      r.readAsText(f, 'utf-8');
+    }));
+
+    let raw;
+    try { raw = await Promise.all(reads); }
+    catch(e) { showMsg('error', `Failed to read file: ${e}`); return; }
+
+    const errors = [];
+    raw.forEach(({ name, html }) => {
+      const results = parseClashHTML(html, name);
+      if (!results) errors.push(name);
+      else results.forEach(d => parsedData.push(d));  // supports combined files
+    });
+
+    if (errors.length) showMsg('error', `Could not parse: ${errors.join(', ')} — make sure these are Navisworks HTML Clash Reports.`);
+    if (!parsedData.length) return;
+
+    // Collect unique disciplines
+    const set = new Set();
+    parsedData.forEach(d => { set.add(d.d1); set.add(d.d2); });
+    disciplines = [...set].sort();
+
+    updateStats();
+    renderMatrix();
+    document.getElementById('matrixSection').style.display = 'block';
+    document.getElementById('exportBtn').style.display     = 'flex';
+    document.getElementById('modeSelector').style.display  = 'flex';
+    document.getElementById('statsBar').style.display      = 'flex';
+
+    showMsg('info', `✔ Loaded ${parsedData.length} clash test(s) → ${disciplines.length} disciplines detected.`);
+  }
+
+  // ── Stats ─────────────────────────────────────────────────────────────────────
+  function updateStats() {
+    const sum = (k) => parsedData.reduce((a, d) => a + (d[k] || 0), 0);
+    document.getElementById('st-total').textContent    = sum('total').toLocaleString();
+    document.getElementById('st-new').textContent      = sum('new').toLocaleString();
+    document.getElementById('st-active').textContent   = sum('active').toLocaleString();
+    document.getElementById('st-reviewed').textContent = sum('reviewed').toLocaleString();
+    document.getElementById('st-resolved').textContent = sum('resolved').toLocaleString();
+    document.getElementById('st-pairs').textContent    = parsedData.length;
+  }
+
+  // ── Render Matrix ─────────────────────────────────────────────────────────────
+  function setMode(mode) {
+    currentMode = mode;
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    const btn = document.getElementById('mode-' + mode);
+    if (btn) btn.classList.add('active');
+    renderMatrix();
+  }
+
+  function getValue(d, mode) {
+    const m = mode || currentMode;
+    if (m === 'open')     return d.new + d.active;
+    if (m === 'total')    return d.total;
+    if (m === 'new')      return d.new;
+    if (m === 'active')   return d.active;
+    if (m === 'resolved') return d.resolved;
+    return d.new + d.active;
+  }
+
+  function getCell(d1, d2) {
+    return parsedData.find(d =>
+      (d.d1 === d1 && d.d2 === d2) || (d.d1 === d2 && d.d2 === d1)
+    );
+  }
+
+  function cellClass(val) {
+    if (val === null) return 'cell-na';
+    if (val === 0)    return 'cell-zero';
+    if (val <= 10)    return 'cell-low';
+    if (val <= 50)    return 'cell-medium';
+    return 'cell-high';
+  }
+
+  // Discipline color palette
+  const DISC_COLORS = [
+    '#1565C0','#2E7D32','#F9A825','#AD1457','#6A1B9A',
+    '#00838F','#E64A19','#37474F','#558B2F','#0277BD',
+    '#4527A0','#BF360C','#00695C','#283593','#827717'
+  ];
+
+  function getDiscColor(idx) {
+    return DISC_COLORS[idx % DISC_COLORS.length];
+  }
+
+  function renderMatrix() {
+    const table = document.getElementById('matrixTable');
+
+    // Header row with rotated discipline names
+    let html = '<thead><tr><th class="row-label">DISCIPLINE</th>';
+    disciplines.forEach((d, di) => {
+      const color = getDiscColor(di);
+      html += `
+        <th class="col-header">
+          <div class="rotated-wrap">
+            <span style="background:${color}">${d}</span>
+          </div>
+        </th>`;
+    });
+    html += '</tr></thead><tbody>';
+
+    disciplines.forEach((r, ri) => {
+      const rowColor = getDiscColor(ri);
+      html += `<tr><td class="label-cell" style="background:${rowColor}">${r}</td>`;
+      disciplines.forEach((c, ci) => {
+        if (ci <= ri) {
+          html += `<td class="cell-diag"></td>`;
+        } else {
+          const clash = getCell(r, c);
+          if (!clash) {
+            html += `<td class="cell-na">–</td>`;
+          } else {
+            const val = getValue(clash);
+            const cls = cellClass(val);
+            html += `
+              <td class="${cls}">
+                ${val.toLocaleString()}
+                <div class="cell-tooltip">
+                  <strong style="color:var(--accent)">${clash.testName}</strong><br>
+                  New+Active: <span style="color:var(--red)">${clash.new + clash.active}</span><br>
+                  New: <span style="color:var(--red)">${clash.new}</span> &nbsp;
+                  Active: <span style="color:var(--orange)">${clash.active}</span><br>
+                  Total: ${clash.total} &nbsp; Resolved: <span style="color:var(--green)">${clash.resolved}</span>
+                </div>
+              </td>`;
+          }
+        }
+      });
+      html += '</tr>';
+    });
+
+    html += '</tbody>';
+    table.innerHTML = html;
+  }
+
+  // ── Export Excel ──────────────────────────────────────────────────────────────
+  function exportExcel() {
+    const wb = XLSX.utils.book_new();
+
+    // Excel discipline colors (similar to web palette)
+    const EXCEL_COLORS = [
+      'FF1565C0','FF2E7D32','FFF9A825','FFAD1457','FF6A1B9A',
+      'FF00838F','FFE64A19','FF37474F','FF558B2F','FF0277BD',
+      'FF4527A0','FFBF360C','FF00695C','FF283593','FF827717'
+    ];
+    function getExcelColor(idx) { return EXCEL_COLORS[idx % EXCEL_COLORS.length]; }
+
+    const aoa = [];
+    // Row 0: header — blank + discipline names
+    aoa.push(['', ...disciplines]);
+
+    // Data rows
+    disciplines.forEach((r, ri) => {
+      const row = [r];
+      disciplines.forEach((c, ci) => {
+        if (ci <= ri) {
+          row.push('');
+        } else {
+          const clash = getCell(r, c);
+          row.push(clash ? (clash.new + clash.active) : '');
+        }
+      });
+      aoa.push(row);
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+
+    // Column widths — bigger
+    ws['!cols'] = [{ wch: 18 }, ...disciplines.map(() => ({ wch: 16 }))];
+
+    // Row heights — bigger
+    ws['!rows'] = aoa.map((_, i) => ({ hpt: i === 0 ? 50 : 36 }));
+
+    const border = (color) => ({
+      top:    { style: 'medium', color: { rgb: color } },
+      bottom: { style: 'medium', color: { rgb: color } },
+      left:   { style: 'medium', color: { rgb: color } },
+      right:  { style: 'medium', color: { rgb: color } }
+    });
+
+    const range = XLSX.utils.decode_range(ws['!ref']);
+
+    // Header row (row 0) — discipline name column headers with colors
+    // Corner cell
+    const cornerAddr = XLSX.utils.encode_cell({ r: 0, c: 0 });
+    if (ws[cornerAddr]) ws[cornerAddr].s = {
+      fill: { fgColor: { rgb: 'FF263238' } },
+      font: { bold: true, color: { rgb: 'FFFFFFFF' }, sz: 11 },
+      alignment: { horizontal: 'center', vertical: 'center' },
+      border: border('FF455A64')
+    };
+
+    disciplines.forEach((d, di) => {
+      const addr = XLSX.utils.encode_cell({ r: 0, c: di + 1 });
+      if (!ws[addr]) return;
+      const col = getExcelColor(di);
+      ws[addr].s = {
+        fill: { fgColor: { rgb: col } },
+        font: { bold: true, color: { rgb: 'FFFFFFFF' }, sz: 12 },
+        alignment: { horizontal: 'center', vertical: 'center', textRotation: 90 },
+        border: border('FF263238')
+      };
+    });
+
+    // Data rows
+    disciplines.forEach((r, ri) => {
+      const excelRow = ri + 1;
+      const rowColor = getExcelColor(ri);
+
+      // Row label — colored per discipline
+      const labelAddr = XLSX.utils.encode_cell({ r: excelRow, c: 0 });
+      if (ws[labelAddr]) ws[labelAddr].s = {
+        fill: { fgColor: { rgb: rowColor } },
+        font: { bold: true, color: { rgb: 'FFFFFFFF' }, sz: 12 },
+        alignment: { horizontal: 'left', vertical: 'center', indent: 1 },
+        border: border('FF263238')
+      };
+
+      disciplines.forEach((c, ci) => {
+        const addr = XLSX.utils.encode_cell({ r: excelRow, c: ci + 1 });
+
+        if (ci <= ri) {
+          // Grey diagonal/lower triangle
+          if (!ws[addr]) ws[addr] = { v: '', t: 's' };
+          ws[addr].s = {
+            fill: { fgColor: { rgb: 'FFB0BEC5' } },
+            border: border('FF90A4AE')
+          };
+        } else {
+          if (!ws[addr]) return;
+          const v = ws[addr].v;
+          let fgColor = 'FF00C853'; // green
+          if (typeof v === 'number') {
+            if (v > 50)      fgColor = 'FFFF1744';
+            else if (v > 10) fgColor = 'FFFF6D00';
+            else if (v > 0)  fgColor = 'FFFFD600';
+          }
+          const isDark = fgColor !== 'FFFFD600';
+          ws[addr].s = {
+            fill: { fgColor: { rgb: fgColor } },
+            font: { bold: true, color: { rgb: isDark ? 'FFFFFFFF' : 'FF333333' }, sz: 14 },
+            alignment: { horizontal: 'center', vertical: 'center' },
+            border: border('FF607D8B')
+          };
+        }
+      });
+    });
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Clash Summary');
+
+    const date = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `Clash_Matrix_${date}.xlsx`, { bookType: 'xlsx', type: 'binary', cellStyles: true });
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────────
+  function clearAll() {
+    uploadedFiles = [];
+    parsedData    = [];
+    disciplines   = [];
+    document.getElementById('fileList').innerHTML      = '';
+    document.getElementById('buildBtn').disabled       = true;
+    document.getElementById('exportBtn').style.display = 'none';
+    document.getElementById('modeSelector').style.display = 'none';
+    document.getElementById('matrixSection').style.display = 'none';
+    document.getElementById('statsBar').style.display  = 'none';
+    fileInput.value = '';
+    hideMsg();
+    clearMatrix();
+  }
+
+  function clearMatrix() {
+    document.getElementById('matrixTable').innerHTML = '';
+  }
+
+  function showMsg(type, text) {
+    hideMsg();
+    const el = document.getElementById(type === 'error' ? 'msgError' : 'msgInfo');
+    el.textContent = text;
+    el.style.display = 'block';
+  }
+
+  function hideMsg() {
+    document.getElementById('msgError').style.display = 'none';
+    document.getElementById('msgInfo').style.display  = 'none';
+  }
+</script>
+</body>
+</html>
