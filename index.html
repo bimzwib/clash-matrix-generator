@@ -508,6 +508,102 @@
   .sess-btn.del:hover { color: var(--red); background: rgba(255,23,68,0.06); }
   .sess-btn + .sess-btn { border-left: 1px solid var(--border); }
   @media print { #sessSidebar, #sessToggle { display: none !important; } }
+
+  /* ── Critical Path Highlight ── */
+  .cell-critical-row { box-shadow: inset 0 0 0 3px #fff176 !important; z-index: 3; }
+  .cell-critical-col { box-shadow: inset 0 0 0 3px #80d8ff !important; z-index: 3; }
+  .cell-critical-both { box-shadow: inset 0 0 0 4px #fff !important; z-index: 4; }
+
+  /* ── Action Items Modal ── */
+  #actionModal { display:none; position:fixed; inset:0; z-index:3500; background:rgba(0,0,0,0.7); backdrop-filter:blur(4px); align-items:center; justify-content:center; }
+  #actionModal.open { display:flex; }
+  .action-box { background:var(--card); border:1px solid var(--border); border-radius:18px; width:100%; max-width:520px; padding:28px; animation:popIn 0.22s ease; max-height:90vh; overflow-y:auto; }
+  .action-title { font-size:15px; font-weight:700; color:var(--accent); letter-spacing:1px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; }
+  .action-item { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:10px; }
+  .action-item-header { display:flex; gap:10px; align-items:center; margin-bottom:10px; }
+  .action-pair-badge { font-size:12px; font-weight:800; letter-spacing:1px; color:var(--accent); font-family:'Share Tech Mono',monospace; }
+  .action-fields { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .action-field input, .action-field select { width:100%; background:var(--bg); border:1px solid var(--border); color:var(--text); padding:7px 10px; border-radius:6px; font-size:12px; font-family:inherit; }
+  .action-field input:focus, .action-field select:focus { outline:none; border-color:var(--accent); }
+  .action-field label { font-size:10px; font-weight:700; letter-spacing:1px; color:var(--muted); display:block; margin-bottom:3px; }
+  .action-status-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+
+  /* ── Health Score Bar in Disc Panel ── */
+  .health-bar-wrap { margin-top:12px; background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:10px 12px; }
+  .health-bar-label { font-size:10px; font-weight:700; letter-spacing:1px; color:var(--muted); margin-bottom:5px; }
+  .health-bar-track { height:8px; border-radius:4px; background:var(--border); overflow:hidden; }
+  .health-bar-fill { height:100%; border-radius:4px; transition:width 0.6s ease; }
+  .health-score-num { font-family:'Share Tech Mono',monospace; font-size:18px; font-weight:700; margin-top:4px; }
+
+  /* ── Compact / Normal / Expanded view ── */
+  #matrixTable.compact td { padding:6px 4px !important; font-size:13px !important; height:36px !important; min-width:50px !important; }
+  #matrixTable.compact th.col-header { height:80px !important; }
+  #matrixTable.expanded td { padding:20px 14px !important; font-size:22px !important; height:70px !important; min-width:90px !important; }
+  #matrixTable.expanded th.col-header { height:140px !important; }
+
+  /* ── Keyboard shortcuts hint ── */
+  #kbHint { display:none; position:fixed; bottom:20px; right:20px; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px 18px; z-index:4000; font-size:12px; line-height:2; min-width:200px; box-shadow:0 8px 32px rgba(0,0,0,0.5); animation:popIn 0.2s ease; }
+  #kbHint .kb-title { font-weight:700; letter-spacing:1px; color:var(--accent); margin-bottom:6px; font-size:13px; }
+  .kb-row { display:flex; justify-content:space-between; gap:20px; }
+  .kb-key { background:var(--surface); border:1px solid var(--border); border-radius:4px; padding:1px 7px; font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--accent); }
+
+  /* ── Undo Toast ── */
+  #undoToast { display:none; position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--surface); border:1px solid var(--accent); border-radius:8px; padding:10px 20px; font-size:13px; font-weight:700; color:var(--text); z-index:5000; gap:12px; align-items:center; box-shadow:0 4px 24px rgba(0,0,0,0.5); }
+  #undoToast.show { display:flex; animation:fadeIn 0.2s ease; }
+  #undoToast button { background:var(--accent2); color:#fff; border:none; border-radius:5px; padding:4px 12px; font-size:12px; font-weight:700; cursor:pointer; font-family:inherit; }
+
+  /* ── View size controls ── */
+  .view-size-group { display:flex; background:var(--surface); border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+  .view-size-btn { padding:9px 13px; border:none; background:transparent; color:var(--muted); font-family:'Rajdhani',sans-serif; font-size:12px; font-weight:700; letter-spacing:1px; cursor:pointer; transition:all 0.2s; border-right:1px solid var(--border); }
+  .view-size-btn:last-child { border-right:none; }
+  .view-size-btn.active { background:var(--accent2); color:#fff; }
+  .view-size-btn:hover:not(.active) { color:var(--accent); }
+
+  /* ── Layout: Rotated (cols right, full square) ── */
+  #matrixTable.layout-rotated th.col-header { height: auto !important; vertical-align: middle; }
+  #matrixTable.layout-rotated th.col-header .rotated-wrap { height: auto; padding: 8px 4px; align-items: center; }
+  #matrixTable.layout-rotated th.col-header span { transform: none !important; font-size: 11px !important; letter-spacing: 1px; }
+  #matrixTable.layout-rotated td.cell-diag { display: table-cell !important; }
+
+  /* ── Layout: Stacked (flat list, every pair a row) ── */
+  #matrixWrapperOuter.layout-stacked .matrix-wrapper { background: transparent; border: none; }
+  .stacked-table { border-collapse: collapse; width: 100%; background: #fff; border-radius: 12px; border: 1px solid #ccd6e0; overflow: hidden; }
+  .stacked-table th { background: #f0f4f8; color: #37474f; font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; padding: 10px 14px; border-bottom: 2px solid #78909c; text-align: left; }
+  .stacked-table td { padding: 10px 14px; font-size: 13px; border-bottom: 1px solid #e0e8f0; }
+  .stacked-table tr:last-child td { border-bottom: none; }
+  .stacked-table tr:hover td { background: rgba(0,119,255,0.04); }
+  .stacked-table .st-pair { font-family: 'Share Tech Mono', monospace; font-weight: 700; color: #37474f; font-size: 13px; }
+  .stacked-table .st-val { font-family: 'Share Tech Mono', monospace; font-size: 16px; font-weight: 800; border-radius: 6px; padding: 4px 12px; text-align: center; min-width: 60px; display: inline-block; }
+  .stacked-table .st-bar-wrap { flex: 1; height: 8px; background: #e0e8f0; border-radius: 4px; overflow: hidden; min-width: 80px; }
+  .stacked-table .st-bar { height: 100%; border-radius: 4px; }
+
+  /* ── Compare Tab Improvements ── */
+  .cmp-summary-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(140px,1fr)); gap: 10px; margin-bottom: 20px; }
+  .cmp-round-card { background: var(--card); border-radius: 12px; padding: 14px 16px; text-align: center; border-top: 3px solid; }
+  .cmp-round-num  { font-family: 'Share Tech Mono', monospace; font-size: 28px; font-weight: 700; }
+  .cmp-round-name { font-size: 11px; color: var(--muted); letter-spacing: 1px; margin-top: 2px; }
+  .cmp-arrow-card { background: var(--card); border-radius: 12px; padding: 14px 16px; text-align: center; border: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .cmp-big-arrow  { font-size: 36px; line-height: 1; }
+  .cmp-pct-label  { font-family: 'Share Tech Mono', monospace; font-size: 20px; font-weight: 700; }
+  .cmp-section-title { font-size: 13px; font-weight: 700; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; margin: 20px 0 10px; display: flex; align-items: center; gap: 8px; }
+  .cmp-section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* Best/Worst badges */
+  .badge-best  { background: rgba(0,230,118,0.15); color: var(--green); border: 1px solid rgba(0,230,118,0.3); border-radius: 5px; padding: 1px 7px; font-size: 10px; font-weight: 700; letter-spacing: 1px; }
+  .badge-worst { background: rgba(255,23,68,0.12); color: var(--red); border: 1px solid rgba(255,23,68,0.3); border-radius: 5px; padding: 1px 7px; font-size: 10px; font-weight: 700; letter-spacing: 1px; }
+
+  /* Δ inline chip */
+  .delta-chip { display: inline-flex; align-items: center; gap: 3px; font-family: 'Share Tech Mono', monospace; font-size: 11px; font-weight: 700; border-radius: 4px; padding: 2px 6px; }
+  .delta-up   { background: rgba(255,23,68,0.1);   color: var(--red);   }
+  .delta-dn   { background: rgba(0,230,118,0.1);   color: var(--green); }
+  .delta-zero { background: rgba(255,255,255,0.05); color: var(--muted); }
+
+  /* Discipline trend row */
+  .disc-trend-row { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px; }
+  .disc-trend-name { font-size: 12px; font-weight: 700; letter-spacing: 1px; min-width: 120px; color: var(--text); }
+  .disc-trend-vals { display: flex; gap: 6px; align-items: center; flex: 1; }
+  .disc-val-bubble { font-family: 'Share Tech Mono', monospace; font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 5px; }
+  .disc-trend-arrow { font-size: 14px; color: var(--muted); }
 </style>
 </head>
 <body>
@@ -517,8 +613,13 @@
 <div id="discPanel">
   <h3>DISCIPLINE SUMMARY <button class="close-btn" onclick="closeDiscPanel()">×</button></h3>
   <div id="discPanelName" style="font-size:20px;font-weight:800;color:#fff;margin-bottom:4px;letter-spacing:2px;"></div>
-  <div id="discPanelTotal" style="font-size:13px;color:var(--muted);margin-bottom:20px;"></div>
-  <div style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--muted);margin-bottom:10px;">CLASHES WITH OTHER DISCIPLINES</div>
+  <div id="discPanelTotal" style="font-size:13px;color:var(--muted);margin-bottom:10px;"></div>
+  <div class="health-bar-wrap" id="discHealthWrap">
+    <div class="health-bar-label">🏥 HEALTH SCORE (Resolved / Total)</div>
+    <div class="health-bar-track"><div class="health-bar-fill" id="discHealthFill"></div></div>
+    <div class="health-score-num" id="discHealthNum">—</div>
+  </div>
+  <div style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--muted);margin-top:16px;margin-bottom:10px;">CLASHES WITH OTHER DISCIPLINES</div>
   <div id="discPanelRows"></div>
 </div>
 
@@ -573,6 +674,42 @@
   </div>
 </div>
 
+<!-- Action Items Modal -->
+<div id="actionModal">
+  <div class="action-box">
+    <div class="action-title">
+      <span>📋 ACTION ITEMS</span>
+      <button class="cell-popup-close" onclick="closeActionModal()">×</button>
+    </div>
+    <div id="actionList"></div>
+    <button onclick="addActionItem()" style="width:100%;margin-top:8px;background:var(--surface);border:1px dashed var(--accent);color:var(--accent);border-radius:8px;padding:10px;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;cursor:pointer;">＋ ADD ACTION ITEM</button>
+    <div style="display:flex;gap:8px;margin-top:12px;">
+      <button onclick="saveActionItems()" style="flex:1;background:linear-gradient(135deg,var(--accent2),var(--accent));color:#fff;border:none;border-radius:8px;padding:10px;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">💾 SAVE</button>
+      <button onclick="exportActionCSV()" style="background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px 16px;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">📥 CSV</button>
+    </div>
+  </div>
+</div>
+
+<!-- Keyboard Shortcuts Hint -->
+<div id="kbHint">
+  <div class="kb-title">⌨ KEYBOARD SHORTCUTS</div>
+  <div class="kb-row"><span>Build Matrix</span><span class="kb-key">B</span></div>
+  <div class="kb-row"><span>Export Excel</span><span class="kb-key">E</span></div>
+  <div class="kb-row"><span>Print / PDF</span><span class="kb-key">P</span></div>
+  <div class="kb-row"><span>Edit Clashes</span><span class="kb-key">X</span></div>
+  <div class="kb-row"><span>Heatmap</span><span class="kb-key">H</span></div>
+  <div class="kb-row"><span>Action Items</span><span class="kb-key">A</span></div>
+  <div class="kb-row"><span>Undo Override</span><span class="kb-key">Ctrl+Z</span></div>
+  <div class="kb-row"><span>This Help</span><span class="kb-key">?</span></div>
+  <div style="margin-top:8px;text-align:right;"><button onclick="document.getElementById('kbHint').style.display='none'" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;">CLOSE</button></div>
+</div>
+
+<!-- Undo Toast -->
+<div id="undoToast">
+  <span id="undoToastMsg">Override cleared</span>
+  <button onclick="redoOverride()">↩ UNDO</button>
+</div>
+
 <div class="container">
   <header>
     <div class="logo-box">BZ</div>
@@ -596,7 +733,13 @@
     <!-- Project Info -->
     <div class="project-info-bar">
       <input type="text" id="projName" placeholder="Project Name (e.g. CAIRO TOWER — optional)">
-      <input type="text" id="projPhase" placeholder="Phase / Issue (e.g. IFC Rev.03 — optional)">
+      <input type="text" id="projPhase" placeholder="Phase / Issue (e.g. IFC Rev.03 — optional)" oninput="renderMatrix()">
+      <div style="display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 12px;min-width:130px;">
+        <span style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--muted);white-space:nowrap;">ROUND</span>
+        <input type="text" id="roundLabel" placeholder="R01" maxlength="6"
+          style="width:54px;background:transparent;border:none;color:var(--accent);font-family:'Share Tech Mono',monospace;font-size:18px;font-weight:700;letter-spacing:2px;outline:none;text-align:center;"
+          oninput="renderMatrix()" title="Round number shown in matrix corner (e.g. R01, R02)">
+      </div>
     </div>
 
     <div class="upload-zone" id="uploadZone" style="margin-top:16px;">
@@ -618,6 +761,8 @@
       <button class="btn btn-print"   id="printBtn"   style="display:none" onclick="printMatrix()">🖨 PRINT / PDF</button>
       <button class="btn" id="editBtn" style="display:none;background:linear-gradient(135deg,#6a1b9a,#4527a0);color:#fff;border:none;" onclick="openEditPanel()">✏ EDIT CLASHES</button>
       <button class="btn btn-clear" onclick="clearAll()">✕ CLEAR</button>
+      <button class="btn" onclick="openActionModal()" id="actionBtn" style="display:none;background:linear-gradient(135deg,#004d40,#00897b);color:#fff;border:none;" title="Action Items (A)">📋 ACTIONS</button>
+      <button onclick="document.getElementById('kbHint').style.display=document.getElementById('kbHint').style.display==='block'?'none':'block'" style="background:var(--surface);border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;" title="Keyboard shortcuts (?)">⌨</button>
 
       <div id="sortSelector" title="Choose discipline sort order">
         <label>SORT:</label>
@@ -634,6 +779,12 @@
         <button class="mode-btn"        onclick="setMode('total')"    id="mode-total">TOTAL</button>
         <button class="mode-btn"        onclick="setMode('resolved')" id="mode-resolved">RESOLVED</button>
         <button class="mode-btn"        onclick="setMode('heatmap')"  id="mode-heatmap">🔥 HEATMAP</button>
+      </div>
+
+      <div class="view-size-group" id="viewSizeGroup" style="display:none">
+        <button class="view-size-btn" id="vs-compact"  onclick="setViewSize('compact')"  title="Compact">▪▪</button>
+        <button class="view-size-btn active" id="vs-normal" onclick="setViewSize('normal')" title="Normal">▫▫</button>
+        <button class="view-size-btn" id="vs-expanded" onclick="setViewSize('expanded')" title="Expanded">□□</button>
       </div>
     </div>
 
@@ -687,11 +838,15 @@
 
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
         <div class="section-title" style="margin-bottom:0;flex:1">CLASH MATRIX</div>
+        <button id="layoutToggleBtn" onclick="cycleLayout()" style="background:var(--surface);border:1px solid var(--border);color:var(--accent);padding:7px 14px;border-radius:7px;font-family:'Share Tech Mono',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all 0.2s;" title="Toggle matrix layout">⊞ TRIANGLE</button>
         <button onclick="toggleThreshold()" style="background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:7px 14px;border-radius:7px;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="Toggle alert threshold">⚠ THRESHOLD</button>
       </div>
 
-      <div class="matrix-wrapper">
-        <table id="matrixTable"></table>
+      <div id="matrixWrapperOuter">
+        <div class="matrix-wrapper">
+          <table id="matrixTable"></table>
+        </div>
+        <div id="stackedView" style="display:none;"></div>
       </div>
       <div class="legend">
         <span class="legend-label">Legend:</span>
@@ -707,14 +862,23 @@
   <!-- Compare Tab -->
   <div class="tab-pane" id="tab-compare">
 
-    <div id="roundsList"></div>
-
-    <div class="rounds-controls">
-      <button class="btn-add-round" onclick="addRound()">＋ ADD ROUND</button>
-      <button class="btn-run-compare" id="runCompareBtn" onclick="runMultiCompare()" disabled>⚡ COMPARE ALL ROUNDS</button>
-      <button class="btn-excel" style="background:linear-gradient(135deg,#1d6f42,#21a366);color:#fff;border:none;border-radius:8px;padding:10px 22px;font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:1px;" id="exportCompareBtn" style="display:none" onclick="exportCompareExcel()">📊 EXPORT COMPARE</button>
+    <!-- Compare Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
+      <div>
+        <div style="font-size:18px;font-weight:700;letter-spacing:2px;color:var(--accent);">🔀 MULTI-ROUND COMPARE</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;">Upload clash reports per round — compare progress across revisions</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn-add-round" onclick="addRound()">＋ ADD ROUND</button>
+        <button class="btn-run-compare" id="runCompareBtn" onclick="runMultiCompare()" disabled>⚡ RUN COMPARE</button>
+        <button style="display:none;background:linear-gradient(135deg,#1d6f42,#21a366);color:#fff;border:none;border-radius:8px;padding:10px 22px;font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:1px;" id="exportCompareBtn" onclick="exportCompareExcel()">📊 EXPORT</button>
+      </div>
     </div>
 
+    <!-- Rounds Grid -->
+    <div id="roundsList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:20px;"></div>
+
+    <!-- Compare Result -->
     <div id="compareResult"></div>
   </div>
 
@@ -799,6 +963,16 @@
     const html = files.filter(f => f.name.match(/\.html?$/i));
     if (!html.length) { showMsg('error', 'Please upload .html files exported from Navisworks Clash Detective.'); return; }
     html.forEach(f => { if (!uploadedFiles.find(x => x.name === f.name)) uploadedFiles.push(f); });
+    // Auto-detect round from filename e.g. R01, Rev02, Round_03
+    if (!document.getElementById('roundLabel').value.trim()) {
+      for (const f of html) {
+        const m = f.name.match(/(?:^|[_\-\s.])(?:R|Rev|Round)[_.\-]?(\d{1,3})(?:[_\-.\s]|$)/i);
+        if (m) {
+          document.getElementById('roundLabel').value = 'R' + m[1].padStart(2, '0');
+          break;
+        }
+      }
+    }
     renderFileList();
     document.getElementById('buildBtn').disabled = uploadedFiles.length === 0;
     hideMsg();
@@ -930,9 +1104,9 @@
     updateStats();
     buildFilterBar();
     renderMatrix();
-    ['matrixSection','exportBtn','exportCsvBtn','printBtn','editBtn','modeSelector','statsBar','sortSelector','filterBar'].forEach(id => {
+    ['matrixSection','exportBtn','exportCsvBtn','printBtn','editBtn','modeSelector','statsBar','sortSelector','filterBar','actionBtn','viewSizeGroup'].forEach(id => {
       const el = document.getElementById(id);
-      if (el) el.style.display = ['matrixSection','statsBar','filterBar'].includes(id) ? 'block' : id === 'statsBar' ? 'flex' : 'flex';
+      if (el) el.style.display = ['matrixSection','statsBar','filterBar'].includes(id) ? 'block' : 'flex';
     });
     document.getElementById('statsBar').style.display = 'flex';
     document.getElementById('filterBar').style.display = 'flex';
@@ -1025,7 +1199,16 @@
       ? disciplines.filter(d => d === activeFilter || getCell(activeFilter, d))
       : disciplines;
 
-    let html = '<thead><tr><th class="row-label">DISCIPLINE</th>';
+    const _round = document.getElementById('roundLabel') ? document.getElementById('roundLabel').value.trim() : '';
+    const _phase = document.getElementById('projPhase').value.trim();
+    const _proj  = document.getElementById('projName').value.trim();
+    const _roundDisp = _round || (_phase ? _phase.match(/R\d+/i)?.[0] || '' : '');
+    const _subLine = _phase || _proj
+      ? `<div style="font-size:9px;color:#78909c;margin-top:1px;letter-spacing:0.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px;">${[_phase, _proj].filter(Boolean).join(' · ')}</div>` : '';
+    const _cornerHTML = _roundDisp
+      ? `<div style="font-size:22px;font-weight:800;letter-spacing:2px;color:#0077ff;font-family:'Share Tech Mono',monospace;line-height:1;">${_roundDisp}</div>${_subLine}`
+      : `<div style="font-size:11px;font-weight:800;letter-spacing:1px;color:#90a4ae;">DISCIPLINE</div>`;
+    let html = `<thead><tr><th class="row-label" title="Click Round field above to set round label" style="vertical-align:middle;padding:8px 10px;">${_cornerHTML}</th>`;
     filtDiscs.forEach((d, di) => {
       const color = getDiscColor(disciplines.indexOf(d));
       const dimmed = activeFilter && d !== activeFilter ? ' style="opacity:0.35"' : '';
@@ -1903,7 +2086,7 @@ ${notesHTML}
     document.getElementById('sort-file').classList.add('active');
     document.getElementById('fileList').innerHTML = '';
     document.getElementById('buildBtn').disabled = true;
-    ['exportBtn','exportCsvBtn','printBtn','editBtn'].forEach(id => document.getElementById(id).style.display = 'none');
+    ['exportBtn','exportCsvBtn','printBtn','editBtn','actionBtn','viewSizeGroup'].forEach(id => document.getElementById(id).style.display = 'none');
     ['modeSelector','matrixSection','statsBar','sortSelector','filterBar','thresholdBar'].forEach(id => document.getElementById(id).style.display = 'none');
     fileInput.value = ''; cellOverrides = {};
     closeDiscPanel(); hideMsg(); clearMatrix();
@@ -2616,6 +2799,642 @@ ${notesHTML}
     document.getElementById('msgError').style.display = 'none';
     document.getElementById('msgInfo').style.display  = 'none';
   }
+
+  // ── View Size ─────────────────────────────────────────────────────────────────
+  let currentViewSize = 'normal';
+  function setViewSize(size) {
+    currentViewSize = size;
+    const t = document.getElementById('matrixTable');
+    t.classList.remove('compact','expanded');
+    if (size !== 'normal') t.classList.add(size);
+    document.querySelectorAll('.view-size-btn').forEach(b => b.classList.remove('active'));
+    const btn = document.getElementById('vs-' + size);
+    if (btn) btn.classList.add('active');
+  }
+
+  // ── Critical Path Highlighting ────────────────────────────────────────────────
+  function applyCriticalPath() {
+    const table = document.getElementById('matrixTable');
+    if (!table || !disciplines.length) return;
+    // Find max per row and per col
+    const rowMax = {}, colMax = {};
+    disciplines.forEach(r => {
+      let mx = -1, mxD = null;
+      disciplines.forEach(c => {
+        const clash = getCell(r, c);
+        if (!clash) return;
+        const v = getValue(clash, null, r, c);
+        if (v > mx) { mx = v; mxD = c; }
+      });
+      if (mxD) rowMax[r] = mxD;
+    });
+    disciplines.forEach(c => {
+      let mx = -1, mxD = null;
+      disciplines.forEach(r => {
+        const clash = getCell(r, c);
+        if (!clash) return;
+        const v = getValue(clash, null, r, c);
+        if (v > mx) { mx = v; mxD = r; }
+      });
+      if (mxD) colMax[c] = mxD;
+    });
+    // Apply classes
+    const rows = table.querySelectorAll('tbody tr');
+    rows.forEach((tr, ri) => {
+      const r = disciplines[ri];
+      const tds = tr.querySelectorAll('td:not(.label-cell)');
+      tds.forEach((td, ci) => {
+        const c = disciplines[ci];
+        td.classList.remove('cell-critical-row','cell-critical-col','cell-critical-both');
+        if (!td.dataset.tip) return;
+        const isRowMax = rowMax[r] === c;
+        const isColMax = colMax[c] === r;
+        if (isRowMax && isColMax) td.classList.add('cell-critical-both');
+        else if (isRowMax) td.classList.add('cell-critical-row');
+        else if (isColMax) td.classList.add('cell-critical-col');
+      });
+    });
+  }
+
+  // ── Discipline Health Score ───────────────────────────────────────────────────
+  function calcDiscHealth(disc) {
+    const related = parsedData.filter(d => d.d1 === disc || d.d2 === disc);
+    if (!related.length) return null;
+    const total    = related.reduce((s, d) => s + (d.total || 0), 0);
+    const resolved = related.reduce((s, d) => s + (d.resolved || 0), 0);
+    if (!total) return 100;
+    return Math.round((resolved / total) * 100);
+  }
+
+  // Patch openDiscPanel to show health score
+  const _openDiscPanelHealth = openDiscPanel;
+  openDiscPanel = function(disc) {
+    _openDiscPanelHealth(disc);
+    const score = calcDiscHealth(disc);
+    const fill  = document.getElementById('discHealthFill');
+    const num   = document.getElementById('discHealthNum');
+    if (score === null) return;
+    const color = score >= 70 ? '#00e676' : score >= 40 ? '#ffd600' : '#ff1744';
+    if (fill) { fill.style.width = score + '%'; fill.style.background = color; }
+    if (num)  { num.textContent = score + '/100'; num.style.color = color; }
+  };
+
+  // ── Undo / Redo for Cell Overrides ────────────────────────────────────────────
+  let overrideHistory = []; // stack of {key, prev}
+  let undoRedoBuffer  = null;
+  let undoTimer       = null;
+
+  const _applyOverridesOrig = applyOverrides;
+  applyOverrides = function() {
+    // Snapshot before applying
+    const snap = JSON.parse(JSON.stringify(cellOverrides));
+    overrideHistory.push(snap);
+    if (overrideHistory.length > 30) overrideHistory.shift();
+    _applyOverridesOrig();
+  };
+
+  function undoOverride() {
+    if (!overrideHistory.length) return;
+    undoRedoBuffer = JSON.parse(JSON.stringify(cellOverrides));
+    cellOverrides  = overrideHistory.pop();
+    renderMatrix();
+    showUndoToast('Override undone', true);
+  }
+
+  function redoOverride() {
+    if (!undoRedoBuffer) return;
+    overrideHistory.push(JSON.parse(JSON.stringify(cellOverrides)));
+    cellOverrides  = undoRedoBuffer;
+    undoRedoBuffer = null;
+    renderMatrix();
+    hideUndoToast();
+  }
+
+  function showUndoToast(msg, showRedo) {
+    const t = document.getElementById('undoToast');
+    const m = document.getElementById('undoToastMsg');
+    const b = t.querySelector('button');
+    m.textContent = msg;
+    b.style.display = showRedo ? 'inline-block' : 'none';
+    t.classList.add('show');
+    clearTimeout(undoTimer);
+    undoTimer = setTimeout(hideUndoToast, 4000);
+  }
+  function hideUndoToast() { document.getElementById('undoToast').classList.remove('show'); }
+
+  // ── Keyboard Shortcuts ────────────────────────────────────────────────────────
+  document.addEventListener('keydown', function(e) {
+    const tag = document.activeElement.tagName;
+    if (['INPUT','TEXTAREA','SELECT'].includes(tag)) return;
+    if (e.ctrlKey && e.key === 'z') { e.preventDefault(); undoOverride(); return; }
+    switch (e.key) {
+      case 'b': case 'B': if (!document.getElementById('buildBtn').disabled) buildMatrix(); break;
+      case 'e': case 'E': if (document.getElementById('exportBtn').style.display !== 'none') exportExcel(); break;
+      case 'p': case 'P': if (document.getElementById('printBtn').style.display !== 'none') printMatrix(); break;
+      case 'x': case 'X': if (document.getElementById('editBtn').style.display !== 'none') openEditPanel(); break;
+      case 'h': case 'H': setMode(currentMode === 'heatmap' ? 'open' : 'heatmap'); break;
+      case 'a': case 'A': if (document.getElementById('actionBtn').style.display !== 'none') openActionModal(); break;
+      case '?': {
+        const kh = document.getElementById('kbHint');
+        kh.style.display = kh.style.display === 'block' ? 'none' : 'block';
+        break;
+      }
+    }
+  });
+
+  // ── Action Items ──────────────────────────────────────────────────────────────
+  let actionItems = []; // [{id, d1, d2, responsible, dueDate, status, note}]
+  let actionIdCounter = 0;
+
+  function openActionModal() {
+    renderActionList();
+    document.getElementById('actionModal').classList.add('open');
+  }
+  function closeActionModal() {
+    document.getElementById('actionModal').classList.remove('open');
+  }
+  document.getElementById('actionModal').addEventListener('click', function(e) { if (e.target === this) closeActionModal(); });
+
+  function addActionItem(d1, d2) {
+    const id = ++actionIdCounter;
+    actionItems.push({ id, d1: d1 || '', d2: d2 || '', responsible: '', dueDate: '', status: 'open', note: '' });
+    renderActionList();
+  }
+
+  function renderActionList() {
+    const list = document.getElementById('actionList');
+    if (!actionItems.length) {
+      list.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:13px;padding:20px;">No action items yet. Add one below.</div>';
+      return;
+    }
+    list.innerHTML = actionItems.map(a => {
+      const statusColor = a.status === 'closed' ? '#00e676' : a.status === 'in-progress' ? '#ffd600' : '#ff6d00';
+      return `
+      <div class="action-item" id="ai-${a.id}">
+        <div class="action-item-header">
+          <div class="action-status-dot" style="background:${statusColor}"></div>
+          <span class="action-pair-badge">${a.d1 || '—'} ↔ ${a.d2 || '—'}</span>
+          <button onclick="deleteActionItem(${a.id})" style="margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;" title="Delete">×</button>
+        </div>
+        <div class="action-fields">
+          <div class="action-field"><label>DISCIPLINE 1</label>
+            <input list="discList" value="${a.d1}" oninput="actionItems.find(x=>x.id===${a.id}).d1=this.value" placeholder="e.g. HVAC">
+          </div>
+          <div class="action-field"><label>DISCIPLINE 2</label>
+            <input list="discList" value="${a.d2}" oninput="actionItems.find(x=>x.id===${a.id}).d2=this.value" placeholder="e.g. STR">
+          </div>
+          <div class="action-field"><label>RESPONSIBLE PARTY</label>
+            <input value="${a.responsible}" oninput="actionItems.find(x=>x.id===${a.id}).responsible=this.value" placeholder="Name / Company">
+          </div>
+          <div class="action-field"><label>DUE DATE</label>
+            <input type="date" value="${a.dueDate}" oninput="actionItems.find(x=>x.id===${a.id}).dueDate=this.value">
+          </div>
+          <div class="action-field" style="grid-column:1/-1"><label>STATUS</label>
+            <select oninput="actionItems.find(x=>x.id===${a.id}).status=this.value">
+              <option value="open"        ${a.status==='open'?'selected':''}>🔴 Open</option>
+              <option value="in-progress" ${a.status==='in-progress'?'selected':''}>🟡 In Progress</option>
+              <option value="closed"      ${a.status==='closed'?'selected':''}>🟢 Closed</option>
+            </select>
+          </div>
+          <div class="action-field" style="grid-column:1/-1"><label>NOTE</label>
+            <input value="${a.note}" oninput="actionItems.find(x=>x.id===${a.id}).note=this.value" placeholder="Details / comments">
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function deleteActionItem(id) {
+    actionItems = actionItems.filter(a => a.id !== id);
+    renderActionList();
+  }
+
+  function saveActionItems() {
+    // Already saved in memory — just close
+    closeActionModal();
+    showMsg('info', `✔ ${actionItems.length} action item(s) saved.`);
+  }
+
+  function exportActionCSV() {
+    if (!actionItems.length) return;
+    const proj  = document.getElementById('projName').value || 'Project';
+    const round = document.getElementById('roundLabel').value || '';
+    const date  = new Date().toISOString().slice(0,10);
+    const rows  = [['Project','Round','D1','D2','Responsible','Due Date','Status','Note']];
+    actionItems.forEach(a => rows.push([proj, round, a.d1, a.d2, a.responsible, a.dueDate, a.status, a.note]));
+    const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type:'text/csv' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `Actions_${proj.replace(/\s+/g,'_')}_${round}_${date}.csv`;
+    link.click();
+  }
+
+  // Datalist for discipline names in action items
+  function updateDiscDatalist() {
+    let dl = document.getElementById('discList');
+    if (!dl) { dl = document.createElement('datalist'); dl.id = 'discList'; document.body.appendChild(dl); }
+    dl.innerHTML = disciplines.map(d => `<option value="${d}">`).join('');
+  }
+
+  // ── Auto-increment Round on CLEAR ─────────────────────────────────────────────
+  const _clearAllOrig = clearAll;
+  clearAll = function() {
+    // Auto-increment round label
+    const rl = document.getElementById('roundLabel');
+    if (rl && rl.value.trim()) {
+      const m = rl.value.trim().match(/^([A-Za-z]*)(\d+)$/);
+      if (m) {
+        const next = parseInt(m[2], 10) + 1;
+        rl.value = m[1] + String(next).padStart(m[2].length, '0');
+      }
+    }
+    _clearAllOrig();
+  };
+
+  // ── Patch renderMatrix to apply critical path + update datalist ───────────────
+  const ___renderMatrixFinal = renderMatrix;
+  renderMatrix = function() {
+    ___renderMatrixFinal();
+    applyCriticalPath();
+    updateDiscDatalist();
+    // Re-apply view size class
+    const t = document.getElementById('matrixTable');
+    if (t && currentViewSize !== 'normal') { t.classList.remove('compact','expanded'); t.classList.add(currentViewSize); }
+  };
+
+  // ── Patch sessSave to include round label ─────────────────────────────────────
+  const _sessSaveOrig = sessSave;
+  sessSave = function() {
+    _sessSaveOrig();
+    // Also patch the last saved session with roundLabel
+    if (sessions.length) {
+      sessions[sessions.length-1].roundLabel = document.getElementById('roundLabel').value;
+    }
+  };
+
+  // ── Patch sessLoad to restore round label ─────────────────────────────────────
+  const _sessLoadOrig = sessLoad;
+  sessLoad = function(id) {
+    _sessLoadOrig(id);
+    const s = sessions.find(x => x.id === id);
+    if (s && s.roundLabel !== undefined) {
+      document.getElementById('roundLabel').value = s.roundLabel;
+    }
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // ── LAYOUT CYCLE ─────────────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════════════════════
+  const LAYOUTS = [
+    { id: 'triangle', label: '⊞ TRIANGLE', desc: 'Triangle (default)' },
+    { id: 'rotated',  label: '⊟ ROTATED',  desc: 'Full square — headers right' },
+    { id: 'stacked',  label: '☰ STACKED',  desc: 'Flat list — every pair a row' },
+  ];
+  let currentLayout = localStorage.getItem('bimz_layout') || 'triangle';
+
+  function cycleLayout() {
+    const idx  = LAYOUTS.findIndex(l => l.id === currentLayout);
+    currentLayout = LAYOUTS[(idx + 1) % LAYOUTS.length].id;
+    localStorage.setItem('bimz_layout', currentLayout);
+    applyLayout();
+  }
+
+  function applyLayout() {
+    const btn = document.getElementById('layoutToggleBtn');
+    const lay = LAYOUTS.find(l => l.id === currentLayout);
+    if (btn && lay) btn.textContent = lay.label;
+
+    const table = document.getElementById('matrixTable');
+    const stackedDiv = document.getElementById('stackedView');
+
+    // Reset
+    table.classList.remove('layout-rotated');
+    table.style.display = '';
+    if (stackedDiv) stackedDiv.style.display = 'none';
+
+    if (currentLayout === 'rotated') {
+      table.classList.add('layout-rotated');
+      renderRotatedMatrix();
+    } else if (currentLayout === 'stacked') {
+      table.style.display = 'none';
+      if (stackedDiv) { stackedDiv.style.display = 'block'; renderStackedMatrix(); }
+    }
+    // triangle = default, already rendered
+  }
+
+  function renderRotatedMatrix() {
+    // In rotated layout: show full square (no grey triangle), column headers horizontal
+    // The table is already rendered — just CSS handles the header rotation removal
+    // Re-render to show all cells (including lower triangle)
+    const table = document.getElementById('matrixTable');
+    const filtDiscs = activeFilter
+      ? disciplines.filter(d => d === activeFilter || getCell(activeFilter, d))
+      : disciplines;
+
+    const _round = (document.getElementById('roundLabel')||{}).value||'';
+    const _phase = document.getElementById('projPhase').value.trim();
+    const _cornerHTML = _round
+      ? `<div style="font-size:16px;font-weight:800;color:#0077ff;font-family:'Share Tech Mono',monospace;">${_round}</div>`
+      : `<div style="font-size:10px;color:#90a4ae;font-weight:700;">DISCIPLINE</div>`;
+
+    let html = `<thead><tr><th class="row-label" style="vertical-align:middle;padding:8px 10px;">${_cornerHTML}</th>`;
+    filtDiscs.forEach((d, di) => {
+      const color = getDiscColor(disciplines.indexOf(d));
+      html += `<th class="col-header"><div class="rotated-wrap"><span style="background:${color}">${d}</span></div></th>`;
+    });
+    html += '</tr></thead><tbody>';
+
+    filtDiscs.forEach((r) => {
+      const rowColor = getDiscColor(disciplines.indexOf(r));
+      html += `<tr><td class="label-cell" style="background:${rowColor}" onclick="openDiscPanel('${r}')">${r}</td>`;
+      filtDiscs.forEach((c) => {
+        const clash = getCell(r, c);
+        const key = overrideKey(r, c);
+        const hasOverride = cellOverrides[key] !== undefined;
+        if (r === c) {
+          html += `<td class="cell-diag"></td>`;
+        } else if (!clash && !hasOverride) {
+          html += `<td class="cell-na">–</td>`;
+        } else {
+          const val = hasOverride ? cellOverrides[key] : getValue(clash, null, r, c);
+          const cls = cellClass(val);
+          const threshCls = val > thresholdValue && thresholdValue > 0 ? ' cell-thresh' : '';
+          html += `<td class="${cls}${threshCls}" style="position:relative;"
+            data-tip="${buildTipData(clash, r, c, val, hasOverride)}"
+            onmouseenter="showTip(event,this)" onmouseleave="hideTip()">
+            ${val.toLocaleString()}</td>`;
+        }
+      });
+      html += '</tr>';
+    });
+    html += '</tbody>';
+    table.innerHTML = html;
+  }
+
+  function renderStackedMatrix() {
+    const stackedDiv = document.getElementById('stackedView');
+    if (!stackedDiv) return;
+    const filtDiscs = activeFilter
+      ? disciplines.filter(d => d === activeFilter || getCell(activeFilter, d))
+      : disciplines;
+
+    // Collect all pairs with data
+    const pairs = [];
+    filtDiscs.forEach((r, ri) => {
+      filtDiscs.forEach((c, ci) => {
+        if (ci <= ri) return;
+        const clash = getCell(r, c);
+        const key = overrideKey(r, c);
+        const hasOverride = cellOverrides[key] !== undefined;
+        if (!clash && !hasOverride) return;
+        const val = hasOverride ? cellOverrides[key] : getValue(clash, null, r, c);
+        pairs.push({ r, c, val, clash, hasOverride });
+      });
+    });
+
+    // Sort descending
+    pairs.sort((a, b) => b.val - a.val);
+    const maxVal = pairs[0]?.val || 1;
+
+    const modeLabel = currentMode === 'open' ? 'New+Active' : currentMode === 'total' ? 'Total' : currentMode === 'resolved' ? 'Resolved' : 'New+Active';
+
+    let html = `<table class="stacked-table">
+      <thead><tr>
+        <th style="width:220px">PAIR</th>
+        <th style="width:90px;text-align:center">${modeLabel.toUpperCase()}</th>
+        <th>SEVERITY BAR</th>
+        <th style="width:90px;text-align:center">STATUS</th>
+      </tr></thead><tbody>`;
+
+    pairs.forEach(({ r, c, val, clash }) => {
+      const cls = cellClass(val);
+      const bg  = cls === 'cell-zero' ? '#00C853' : cls === 'cell-low' ? '#FFD600' : cls === 'cell-medium' ? '#FF6D00' : '#FF1744';
+      const fc  = cls === 'cell-low' ? '#333' : '#fff';
+      const barW = Math.round((val / maxVal) * 100);
+      const rColor = getDiscColor(disciplines.indexOf(r));
+      const cColor = getDiscColor(disciplines.indexOf(c));
+      const statusLabel = val === 0 ? '✅ CLEAR' : val <= 10 ? '🟡 LOW' : val <= 50 ? '🟠 MEDIUM' : '🔴 HIGH';
+
+      html += `<tr>
+        <td>
+          <span class="st-pair">
+            <span style="background:${rColor};color:#fff;border-radius:4px;padding:2px 7px;font-size:11px;font-weight:800;margin-right:4px;">${r}</span>
+            <span style="color:#78909c;font-size:11px;">↔</span>
+            <span style="background:${cColor};color:#fff;border-radius:4px;padding:2px 7px;font-size:11px;font-weight:800;margin-left:4px;">${c}</span>
+          </span>
+        </td>
+        <td style="text-align:center">
+          <span class="st-val" style="background:${bg};color:${fc};">${val.toLocaleString()}</span>
+        </td>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="st-bar-wrap"><div class="st-bar" style="width:${barW}%;background:${bg};"></div></div>
+            <span style="font-size:10px;color:#78909c;min-width:30px;">${barW}%</span>
+          </div>
+        </td>
+        <td style="text-align:center;font-size:12px;font-weight:700;">${statusLabel}</td>
+      </tr>`;
+    });
+
+    if (!pairs.length) html += `<tr><td colspan="4" style="text-align:center;color:#78909c;padding:24px;">No clash data to display.</td></tr>`;
+    html += '</tbody></table>';
+    stackedDiv.innerHTML = html;
+  }
+
+  // Patch renderMatrix to re-apply layout
+  const ____renderMatrixLayout = renderMatrix;
+  renderMatrix = function() {
+    ____renderMatrixLayout();
+    if (currentLayout === 'rotated') { renderRotatedMatrix(); document.getElementById('matrixTable').classList.add('layout-rotated'); }
+    else if (currentLayout === 'stacked') { document.getElementById('matrixTable').style.display = 'none'; renderStackedMatrix(); document.getElementById('stackedView').style.display = 'block'; }
+  };
+
+  // Init layout on page load
+  applyLayout();
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // ── COMPARE TAB — IMPROVED RENDERING ─────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════════════════════
+  const _runMultiCompareOrig = runMultiCompare;
+  runMultiCompare = function() {
+    const loadedRounds = rounds.filter(r => r.parsedData.length > 0);
+    if (loadedRounds.length < 2) { alert('Please load at least 2 rounds.'); return; }
+
+    // All unique discipline pairs
+    const allPairs = new Set();
+    const allDiscs = new Set();
+    loadedRounds.forEach(r => r.parsedData.forEach(d => {
+      allDiscs.add(d.d1); allDiscs.add(d.d2);
+      const key = [d.d1, d.d2].sort().join('||');
+      allPairs.add(key);
+    }));
+    const discList = [...allDiscs].sort();
+
+    // Build pair rows
+    const pairRows = [];
+    allPairs.forEach(pairKey => {
+      const [d1, d2] = pairKey.split('||');
+      const vals = loadedRounds.map(r => {
+        const match = r.parsedData.find(d =>
+          ([d.d1,d.d2].sort().join('||') === pairKey)
+        );
+        return match ? getValue(match, null, d1, d2) : null;
+      });
+      pairRows.push({ d1, d2, vals });
+    });
+    pairRows.sort((a, b) => (b.vals[b.vals.length-1]??-1) - (a.vals[a.vals.length-1]??-1));
+
+    // Discipline totals per round
+    const discTotals = {};
+    discList.forEach(disc => {
+      discTotals[disc] = loadedRounds.map(r => {
+        return r.parsedData
+          .filter(d => d.d1 === disc || d.d2 === disc)
+          .reduce((s, d) => s + getValue(d, null, d.d1, d.d2), 0);
+      });
+    });
+
+    // Round totals
+    const roundTotals = loadedRounds.map((_, ri) =>
+      pairRows.reduce((s, row) => s + (row.vals[ri] ?? 0), 0)
+    );
+
+    // ── 1. Summary Cards ───────────────────────────────────────────────────────
+    let html = `<div class="cmp-summary-grid">`;
+    loadedRounds.forEach((r, ri) => {
+      const color = ROUND_COLORS[ri % ROUND_COLORS.length];
+      const prev  = ri > 0 ? roundTotals[ri - 1] : null;
+      const diff  = prev !== null ? roundTotals[ri] - prev : null;
+      const diffHtml = diff !== null
+        ? `<div class="delta-chip ${diff > 0 ? 'delta-up' : diff < 0 ? 'delta-dn' : 'delta-zero'}" style="margin:4px auto 0;width:fit-content;">${diff > 0 ? '▲' : diff < 0 ? '▼' : '→'} ${Math.abs(diff)}</div>`
+        : '';
+      html += `
+        <div class="cmp-round-card" style="border-color:${color};">
+          <div class="cmp-round-num" style="color:${color}">${roundTotals[ri].toLocaleString()}</div>
+          <div class="cmp-round-name">${r.name}</div>
+          ${diffHtml}
+        </div>`;
+    });
+    // Overall change
+    const first = roundTotals[0], last = roundTotals[roundTotals.length-1];
+    const pct = first > 0 ? Math.round(Math.abs(first - last) / first * 100) : 0;
+    const improved = last <= first;
+    html += `
+      <div class="cmp-arrow-card">
+        <div class="cmp-big-arrow">${improved ? '📉' : '📈'}</div>
+        <div class="cmp-pct-label" style="color:${improved ? 'var(--green)' : 'var(--red)'}">${pct}%</div>
+        <div style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:2px;">${improved ? 'RESOLVED' : 'INCREASED'}</div>
+      </div>`;
+    html += `</div>`;
+
+    // ── 2. Discipline Trend ────────────────────────────────────────────────────
+    // Find best & worst improving disciplines
+    const discChanges = discList.map(disc => {
+      const vals = discTotals[disc];
+      const chg = (vals[vals.length-1] ?? 0) - (vals[0] ?? 0);
+      return { disc, vals, chg };
+    }).sort((a, b) => a.chg - b.chg);
+
+    html += `<div class="cmp-section-title">DISCIPLINE TREND</div>`;
+    html += `<div>`;
+    discChanges.forEach(({ disc, vals, chg }) => {
+      const idx = discList.indexOf(disc);
+      const color = getDiscColor(disciplines.indexOf(disc) >= 0 ? disciplines.indexOf(disc) : idx);
+      const isBest  = chg === discChanges[0].chg && chg < 0;
+      const isWorst = chg === discChanges[discChanges.length-1].chg && chg > 0;
+
+      const valsHtml = vals.map((v, ri) => {
+        const bg = v === 0 ? '#00C853' : v <= 10 ? '#FFD600' : v <= 50 ? '#FF6D00' : '#FF1744';
+        const fc = v <= 10 && v > 0 ? '#333' : '#fff';
+        const rColor = ROUND_COLORS[ri % ROUND_COLORS.length];
+        return `<span class="disc-val-bubble" style="background:${bg};color:${fc}" title="${loadedRounds[ri].name}">${v}</span>
+          ${ri < vals.length-1 ? '<span class="disc-trend-arrow">→</span>' : ''}`;
+      }).join('');
+
+      const chgChip = chg === 0
+        ? `<span class="delta-chip delta-zero">→ 0</span>`
+        : `<span class="delta-chip ${chg < 0 ? 'delta-dn' : 'delta-up'}">${chg < 0 ? '▼' : '▲'} ${Math.abs(chg)}</span>`;
+
+      html += `
+        <div class="disc-trend-row">
+          <div class="disc-trend-name">
+            <span style="background:${color};color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:800;">${disc}</span>
+          </div>
+          <div class="disc-trend-vals">${valsHtml}</div>
+          ${chgChip}
+          ${isBest  ? '<span class="badge-best">BEST ✅</span>'  : ''}
+          ${isWorst ? '<span class="badge-worst">WORST ⚠</span>' : ''}
+        </div>`;
+    });
+    html += `</div>`;
+
+    // ── 3. Pair Table ──────────────────────────────────────────────────────────
+    html += `<div class="cmp-section-title">PAIR DETAILS</div>`;
+    html += `<div class="mr-table-wrap"><table class="mr-table"><thead><tr>
+      <th class="mr-name-col">PAIR</th>`;
+    loadedRounds.forEach((r, ri) => {
+      const color = ROUND_COLORS[ri % ROUND_COLORS.length];
+      html += `<th style="color:${color}">${r.name}</th>`;
+      if (ri > 0) html += `<th>Δ</th>`;
+    });
+    html += `<th>TREND</th></tr></thead><tbody>`;
+
+    pairRows.forEach(({ d1, d2, vals }) => {
+      const d1c = getDiscColor(disciplines.indexOf(d1));
+      const d2c = getDiscColor(disciplines.indexOf(d2));
+      html += `<tr><td class="mr-name">
+        <span style="background:${d1c};color:#fff;border-radius:3px;padding:1px 6px;font-size:11px;font-weight:800;margin-right:3px;">${d1}</span>
+        <span style="color:var(--muted);font-size:11px;">↔</span>
+        <span style="background:${d2c};color:#fff;border-radius:3px;padding:1px 6px;font-size:11px;font-weight:800;margin-left:3px;">${d2}</span>
+      </td>`;
+      vals.forEach((v, ri) => {
+        const display = v === null ? `<span style="color:var(--muted)">—</span>` : v.toLocaleString();
+        const bg = v === null ? '' : v === 0 ? '#00C85322' : v <= 10 ? '#FFD60022' : v <= 50 ? '#FF6D0022' : '#FF174422';
+        const fc = v === null ? '' : v === 0 ? '#00C853' : v <= 10 ? '#c8a000' : v <= 50 ? '#ff6d00' : '#ff1744';
+        html += `<td style="background:${bg};color:${fc};font-weight:800;font-family:'Share Tech Mono',monospace;">${display}</td>`;
+        if (ri > 0) {
+          const prev = vals[ri-1];
+          const diff = (v??0) - (prev??0);
+          html += diff === 0
+            ? `<td class="delta-chip delta-zero" style="font-size:11px;text-align:center;">—</td>`
+            : `<td><span class="delta-chip ${diff>0?'delta-up':'delta-dn'}">${diff>0?'▲':'▼'} ${Math.abs(diff)}</span></td>`;
+        }
+      });
+      html += `<td class="mr-trend-cell">${buildTrendArrow(vals)}</td></tr>`;
+    });
+
+    // Totals row
+    html += `<tr class="mr-total-row"><td class="mr-name">TOTAL</td>`;
+    roundTotals.forEach((t, ri) => {
+      html += `<td style="color:var(--accent);font-weight:800;font-family:'Share Tech Mono',monospace;">${t.toLocaleString()}</td>`;
+      if (ri > 0) {
+        const diff = t - roundTotals[ri-1];
+        html += diff === 0 ? `<td class="delta-zero" style="text-align:center;">—</td>`
+          : `<td><span class="delta-chip ${diff>0?'delta-up':'delta-dn'}">${diff>0?'▲':'▼'} ${Math.abs(diff)}</span></td>`;
+      }
+    });
+    html += `<td></td></tr></tbody></table></div>`;
+
+    // ── 4. Sparklines ─────────────────────────────────────────────────────────
+    const topPairs = [...pairRows].sort((a,b) => Math.max(...b.vals.filter(v=>v!==null)) - Math.max(...a.vals.filter(v=>v!==null))).slice(0, 8);
+    html += `<div class="cmp-section-title">TOP PAIR TRENDS</div><div class="sparkline-wrap">`;
+    topPairs.forEach(row => {
+      const valid = row.vals.filter(v => v !== null);
+      if (valid.length < 2) return;
+      html += `<div class="spark-row">
+        <div class="spark-label">${row.d1} ↔ ${row.d2}</div>
+        ${buildSparklineSVG(row.vals, loadedRounds.length)}
+        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);white-space:nowrap;min-width:80px;text-align:right">${row.vals[0]??'—'} → ${row.vals[row.vals.length-1]??'—'}</div>
+      </div>`;
+    });
+    html += `</div>`;
+
+    document.getElementById('compareResult').innerHTML = html;
+    const expBtn = document.getElementById('exportCompareBtn');
+    if (expBtn) expBtn.style.display = 'inline-flex';
+    window._lastCompareData = { loadedRounds, rows: pairRows, totals: roundTotals };
+  };
 </script>
 </body>
 </html>
