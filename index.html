@@ -509,6 +509,13 @@
   .sess-btn + .sess-btn { border-left: 1px solid var(--border); }
   @media print { #sessSidebar, #sessToggle { display: none !important; } }
 
+  /* ── All-Layouts Stacked Blocks ── */
+  .all-layouts-block { margin-bottom: 32px; }
+  .layout-block-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .layout-block-title { font-size: 14px; font-weight: 700; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; }
+  .btn-print-layout { background: linear-gradient(135deg, #1a237e, #3949ab); color: #fff; border: none; border-radius: 7px; padding: 7px 16px; font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 1px; cursor: pointer; transition: all 0.2s; }
+  .btn-print-layout:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(57,73,171,0.4); }
+
   /* ── Critical Path Highlight ── */
   .cell-critical-row { box-shadow: inset 0 0 0 3px #fff176 !important; z-index: 3; }
   .cell-critical-col { box-shadow: inset 0 0 0 3px #80d8ff !important; z-index: 3; }
@@ -559,11 +566,31 @@
   .view-size-btn.active { background:var(--accent2); color:#fff; }
   .view-size-btn:hover:not(.active) { color:var(--accent); }
 
+  /* ── Rotated View — horizontal column headers ── */
+  #matrixTableRotated th.rot-col-header { height: auto; vertical-align: middle; text-align: center; padding: 10px 6px; border: 1px solid #b0bec5; background: #fff; min-width: 70px; }
+
   /* ── Layout: Rotated (cols right, full square) ── */
-  #matrixTable.layout-rotated th.col-header { height: auto !important; vertical-align: middle; }
-  #matrixTable.layout-rotated th.col-header .rotated-wrap { height: auto; padding: 8px 4px; align-items: center; }
-  #matrixTable.layout-rotated th.col-header span { transform: none !important; font-size: 11px !important; letter-spacing: 1px; }
-  #matrixTable.layout-rotated td.cell-diag { display: table-cell !important; }
+  #matrixTable.layout-rotated th.col-header,
+  #matrixTableRotated th.col-header { height: auto !important; vertical-align: middle; }
+  #matrixTable.layout-rotated th.col-header .rotated-wrap,
+  #matrixTableRotated th.col-header .rotated-wrap { height: auto; padding: 8px 6px; align-items: center; }
+  #matrixTable.layout-rotated th.col-header span,
+  #matrixTableRotated th.col-header span { transform: none !important; font-size: 13px !important; letter-spacing: 1px; padding: 4px 8px; }
+  #matrixTable.layout-rotated td.cell-diag,
+  #matrixTableRotated td.cell-diag { display: table-cell !important; }
+  /* Rotated table full sizing — same as main matrix */
+  #matrixTableRotated { border-collapse: collapse; width: 100%; min-width: 400px; background: #fff; }
+  #matrixTableRotated th, #matrixTableRotated td { border: 1px solid #b0bec5; text-align: center; font-weight: 700; font-size: 13px; letter-spacing: 0.5px; min-width: 70px; }
+  #matrixTableRotated th.row-label { background: #f0f4f8; color: #37474f; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; min-width: 120px; padding: 8px 12px; text-align: left; border-bottom: 2px solid #78909c; }
+  #matrixTableRotated td { padding: 14px 10px; font-family: 'Share Tech Mono', monospace; font-size: 18px; font-weight: 800; height: 56px; }
+  #matrixTableRotated td.label-cell { text-align: left; padding-left: 14px; font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 800; letter-spacing: 1.5px; color: #fff; border-right: 2px solid #78909c; cursor: pointer; }
+  #matrixTableRotated td.label-cell:hover { filter: brightness(0.8); }
+  #matrixTableRotated .cell-diag { background: #b0bec5 !important; background-image: repeating-linear-gradient(45deg, rgba(0,0,0,0.06) 0px, rgba(0,0,0,0.06) 4px, transparent 4px, transparent 10px) !important; }
+  #matrixTableRotated .cell-zero   { background: #00C853; color: #fff; }
+  #matrixTableRotated .cell-low    { background: #FFD600; color: #333; }
+  #matrixTableRotated .cell-medium { background: #FF6D00; color: #fff; }
+  #matrixTableRotated .cell-high   { background: #FF1744; color: #fff; }
+  #matrixTableRotated .cell-na     { background: #cfd8dc; color: #90a4ae; }
 
   /* ── Layout: Stacked (flat list, every pair a row) ── */
   #matrixWrapperOuter.layout-stacked .matrix-wrapper { background: transparent; border: none; }
@@ -838,15 +865,35 @@
 
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
         <div class="section-title" style="margin-bottom:0;flex:1">CLASH MATRIX</div>
-        <button id="layoutToggleBtn" onclick="cycleLayout()" style="background:var(--surface);border:1px solid var(--border);color:var(--accent);padding:7px 14px;border-radius:7px;font-family:'Share Tech Mono',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all 0.2s;" title="Toggle matrix layout">⊞ TRIANGLE</button>
         <button onclick="toggleThreshold()" style="background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:7px 14px;border-radius:7px;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="Toggle alert threshold">⚠ THRESHOLD</button>
       </div>
 
-      <div id="matrixWrapperOuter">
-        <div class="matrix-wrapper">
-          <table id="matrixTable"></table>
+      <!-- ── View 1: TRIANGLE ── -->
+      <div class="all-layouts-block">
+        <div class="layout-block-header">
+          <span class="layout-block-title">⊞ 1 — TRIANGLE VIEW</span>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-print-layout" onclick="printLayoutTriangle()">🖨 PRINT / PDF</button>
+            <button class="btn-print-layout" onclick="exportExcelTriangle()" style="background:linear-gradient(135deg,#1d6f42,#21a366);">📊 EXCEL</button>
+          </div>
         </div>
-        <div id="stackedView" style="display:none;"></div>
+        <div id="matrixWrapperOuter">
+          <div class="matrix-wrapper">
+            <table id="matrixTable"></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── View 2: STACKED ── -->
+      <div class="all-layouts-block" id="stackedBlock" style="display:none;">
+        <div class="layout-block-header">
+          <span class="layout-block-title">☰ 2 — STACKED LIST VIEW</span>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-print-layout" onclick="printLayoutStacked()">🖨 PRINT / PDF</button>
+            <button class="btn-print-layout" onclick="exportExcelStacked()" style="background:linear-gradient(135deg,#1d6f42,#21a366);">📊 EXCEL</button>
+          </div>
+        </div>
+        <div id="stackedView"></div>
       </div>
       <div class="legend">
         <span class="legend-label">Legend:</span>
@@ -1113,6 +1160,8 @@
     document.getElementById('sortSelector').style.display = 'flex';
     document.getElementById('modeSelector').style.display = 'flex';
     document.getElementById('matrixSection').style.display = 'block';
+    const ppb = document.getElementById('printPickerBar');
+    if (ppb) ppb.style.display = 'flex';
     showMsg('info', `✔ Loaded ${parsedData.length} clash test(s) → ${disciplines.length} disciplines detected.`);
   }
 
@@ -3086,90 +3135,91 @@ ${notesHTML}
   // ═══════════════════════════════════════════════════════════════════════════════
   // ── LAYOUT CYCLE ─────────────────────────────────────────────────────────────
   // ═══════════════════════════════════════════════════════════════════════════════
-  const LAYOUTS = [
-    { id: 'triangle', label: '⊞ TRIANGLE', desc: 'Triangle (default)' },
-    { id: 'rotated',  label: '⊟ ROTATED',  desc: 'Full square — headers right' },
-    { id: 'stacked',  label: '☰ STACKED',  desc: 'Flat list — every pair a row' },
-  ];
-  let currentLayout = localStorage.getItem('bimz_layout') || 'triangle';
-
-  function cycleLayout() {
-    const idx  = LAYOUTS.findIndex(l => l.id === currentLayout);
-    currentLayout = LAYOUTS[(idx + 1) % LAYOUTS.length].id;
-    localStorage.setItem('bimz_layout', currentLayout);
-    applyLayout();
+  // ── All-three layouts always visible ─────────────────────────────────────────
+  function applyAllLayouts() {
+    if (!parsedData.length) return;
+    document.getElementById('stackedBlock').style.display = 'block';
+    renderStackedMatrix();
   }
 
-  function applyLayout() {
-    const btn = document.getElementById('layoutToggleBtn');
-    const lay = LAYOUTS.find(l => l.id === currentLayout);
-    if (btn && lay) btn.textContent = lay.label;
+  // Legacy stub so old references don't break
+  function cycleLayout() {}
+  function applyLayout() {}
 
-    const table = document.getElementById('matrixTable');
-    const stackedDiv = document.getElementById('stackedView');
-
-    // Reset
-    table.classList.remove('layout-rotated');
-    table.style.display = '';
-    if (stackedDiv) stackedDiv.style.display = 'none';
-
-    if (currentLayout === 'rotated') {
-      table.classList.add('layout-rotated');
-      renderRotatedMatrix();
-    } else if (currentLayout === 'stacked') {
-      table.style.display = 'none';
-      if (stackedDiv) { stackedDiv.style.display = 'block'; renderStackedMatrix(); }
-    }
-    // triangle = default, already rendered
-  }
-
-  function renderRotatedMatrix() {
-    // In rotated layout: show full square (no grey triangle), column headers horizontal
-    // The table is already rendered — just CSS handles the header rotation removal
-    // Re-render to show all cells (including lower triangle)
-    const table = document.getElementById('matrixTable');
+  function renderRotatedMatrixTo(table) {
+    if (!table) return;
     const filtDiscs = activeFilter
       ? disciplines.filter(d => d === activeFilter || getCell(activeFilter, d))
       : disciplines;
 
     const _round = (document.getElementById('roundLabel')||{}).value||'';
-    const _phase = document.getElementById('projPhase').value.trim();
     const _cornerHTML = _round
       ? `<div style="font-size:16px;font-weight:800;color:#0077ff;font-family:'Share Tech Mono',monospace;">${_round}</div>`
       : `<div style="font-size:10px;color:#90a4ae;font-weight:700;">DISCIPLINE</div>`;
 
+    // Headers — horizontal (no rotation), same colours — use rot-col-header class NOT col-header
     let html = `<thead><tr><th class="row-label" style="vertical-align:middle;padding:8px 10px;">${_cornerHTML}</th>`;
-    filtDiscs.forEach((d, di) => {
+    filtDiscs.forEach((d) => {
       const color = getDiscColor(disciplines.indexOf(d));
-      html += `<th class="col-header"><div class="rotated-wrap"><span style="background:${color}">${d}</span></div></th>`;
+      html += `<th class="rot-col-header">
+        <span style="background:${color};color:#fff;border-radius:4px;padding:4px 10px;font-size:13px;font-weight:800;letter-spacing:1px;white-space:nowrap;display:inline-block;">${d}</span>
+      </th>`;
     });
     html += '</tr></thead><tbody>';
 
+    // Rows — same Triangle logic: lower triangle = diagonal hatched
     filtDiscs.forEach((r) => {
       const rowColor = getDiscColor(disciplines.indexOf(r));
+      const origRi = disciplines.indexOf(r);
       html += `<tr><td class="label-cell" style="background:${rowColor}" onclick="openDiscPanel('${r}')">${r}</td>`;
       filtDiscs.forEach((c) => {
-        const clash = getCell(r, c);
-        const key = overrideKey(r, c);
-        const hasOverride = cellOverrides[key] !== undefined;
-        if (r === c) {
+        const origCi = disciplines.indexOf(c);
+        if (origCi < origRi) {
+          // lower triangle → diagonal
           html += `<td class="cell-diag"></td>`;
-        } else if (!clash && !hasOverride) {
-          html += `<td class="cell-na">–</td>`;
+        } else if (origCi === origRi) {
+          // diagonal cell (same discipline)
+          const clash = getCell(r, c);
+          const key = overrideKey(r, c);
+          const hasOverride = cellOverrides[key] !== undefined;
+          if (!clash && !hasOverride) {
+            html += `<td class="cell-diag"></td>`;
+          } else {
+            const val = hasOverride ? cellOverrides[key] : getValue(clash, null, r, c);
+            const cls = cellClass(val);
+            const threshCls = val > thresholdValue && thresholdValue > 0 ? ' cell-thresh' : '';
+            html += `<td class="${cls}${threshCls}" style="outline:3px solid #fff;outline-offset:-3px;position:relative;"
+              data-tip="${buildTipData(clash, r, c, val, hasOverride)}"
+              onmouseenter="showTip(event,this)" onmouseleave="hideTip()">
+              ${val.toLocaleString()}</td>`;
+          }
         } else {
-          const val = hasOverride ? cellOverrides[key] : getValue(clash, null, r, c);
-          const cls = cellClass(val);
-          const threshCls = val > thresholdValue && thresholdValue > 0 ? ' cell-thresh' : '';
-          html += `<td class="${cls}${threshCls}" style="position:relative;"
-            data-tip="${buildTipData(clash, r, c, val, hasOverride)}"
-            onmouseenter="showTip(event,this)" onmouseleave="hideTip()">
-            ${val.toLocaleString()}</td>`;
+          // upper triangle → show data
+          const clash = getCell(r, c);
+          const key = overrideKey(r, c);
+          const hasOverride = cellOverrides[key] !== undefined;
+          if (!clash && !hasOverride) {
+            html += `<td class="cell-na">–</td>`;
+          } else {
+            const val = hasOverride ? cellOverrides[key] : getValue(clash, null, r, c);
+            const cls = cellClass(val);
+            const threshCls = val > thresholdValue && thresholdValue > 0 ? ' cell-thresh' : '';
+            html += `<td class="${cls}${threshCls}" style="position:relative;"
+              data-tip="${buildTipData(clash, r, c, val, hasOverride)}"
+              onmouseenter="showTip(event,this)" onmouseleave="hideTip()">
+              ${val.toLocaleString()}</td>`;
+          }
         }
       });
       html += '</tr>';
     });
     html += '</tbody>';
     table.innerHTML = html;
+    // no layout-rotated class needed — headers already horizontal inline
+  }
+
+  function renderRotatedMatrix() {
+    renderRotatedMatrixTo(document.getElementById('matrixTableRotated') || document.getElementById('matrixTable'));
   }
 
   function renderStackedMatrix() {
@@ -3242,16 +3292,311 @@ ${notesHTML}
     stackedDiv.innerHTML = html;
   }
 
-  // Patch renderMatrix to re-apply layout
+  function exportExcelTriangle() {
+    // Reuse existing exportExcel (already exports the matrix)
+    exportExcel();
+  }
+
+  function exportExcelStacked() {
+    const wb = XLSX.utils.book_new();
+    const proj  = document.getElementById('projName').value  || 'ClashMatrix';
+    const phase = document.getElementById('projPhase').value || '';
+    const date  = new Date().toISOString().slice(0, 10);
+    const modeLabel = { open:'New + Active', total:'Total Clashes', resolved:'Resolved', heatmap:'Heatmap' }[currentMode] || currentMode;
+
+    const filtDiscs = activeFilter ? disciplines.filter(d => d === activeFilter || getCell(activeFilter, d)) : disciplines;
+    const pairs = [];
+    filtDiscs.forEach((r, ri) => filtDiscs.forEach((c, ci) => {
+      if (ci <= ri) return;
+      const key = overrideKey(r, c);
+      const hasOv = cellOverrides[key] !== undefined;
+      const clash = getCell(r, c);
+      if (!clash && !hasOv) return;
+      const val = hasOv ? cellOverrides[key] : getValue(clash, null, r, c);
+      pairs.push({ r: getDiscDisplayName(r), c: getDiscDisplayName(c), val,
+        total: clash?.total ?? val, new: clash?.new ?? 0, active: clash?.active ?? 0,
+        reviewed: clash?.reviewed ?? 0, approved: clash?.approved ?? 0, resolved: clash?.resolved ?? 0 });
+    }));
+    pairs.sort((a, b) => b.val - a.val);
+
+    const header = ['#', 'PAIR', 'D1', 'D2', modeLabel.toUpperCase(), 'TOTAL', 'NEW', 'ACTIVE', 'REVIEWED', 'APPROVED', 'RESOLVED', 'STATUS'];
+    const aoa = [header];
+    pairs.forEach((p, i) => {
+      const status = p.val === 0 ? 'CLEAR' : p.val <= 10 ? 'LOW' : p.val <= 50 ? 'MEDIUM' : 'HIGH';
+      aoa.push([i + 1, `${p.r} ↔ ${p.c}`, p.r, p.c, p.val, p.total, p.new, p.active, p.reviewed, p.approved, p.resolved, status]);
+    });
+    aoa.push([]);
+    if (proj)  aoa.push([`Project: ${proj}`]);
+    if (phase) aoa.push([`Phase: ${phase}`]);
+    aoa.push([`Mode: ${modeLabel}   |   Generated by BIMZ v6.0   |   ${date}`]);
+
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws['!cols'] = [{wch:5},{wch:28},{wch:12},{wch:12},{wch:14},{wch:10},{wch:8},{wch:10},{wch:12},{wch:12},{wch:12},{wch:10}];
+
+    // Style header row
+    const fgMap = { CLEAR:'FF00C853', LOW:'FFFFD600', MEDIUM:'FFFF6D00', HIGH:'FFFF1744' };
+    header.forEach((_, ci) => {
+      const addr = XLSX.utils.encode_cell({ r:0, c:ci });
+      if (!ws[addr]) ws[addr] = { v: header[ci], t:'s' };
+      ws[addr].s = { fill:{fgColor:{rgb:'FF0A0E1A'}}, font:{bold:true,color:{rgb:'FF00D4FF'},sz:11,name:'Calibri'}, alignment:{horizontal:'center',vertical:'center'}, border:{top:{style:'thin',color:{rgb:'FF1E2D45'}},bottom:{style:'thin',color:{rgb:'FF1E2D45'}},left:{style:'thin',color:{rgb:'FF1E2D45'}},right:{style:'thin',color:{rgb:'FF1E2D45'}}} };
+    });
+    // Style data rows
+    pairs.forEach((p, i) => {
+      const excelRow = i + 1;
+      const statusVal = p.val === 0 ? 'CLEAR' : p.val <= 10 ? 'LOW' : p.val <= 50 ? 'MEDIUM' : 'HIGH';
+      const fg = fgMap[statusVal];
+      const fc = statusVal === 'LOW' ? 'FF333333' : 'FFFFFFFF';
+      // Value cell colour
+      const valAddr = XLSX.utils.encode_cell({ r: excelRow, c: 4 });
+      if (ws[valAddr]) ws[valAddr].s = { fill:{fgColor:{rgb:fg}}, font:{bold:true,color:{rgb:fc},sz:14,name:'Calibri'}, alignment:{horizontal:'center',vertical:'center'} };
+      // Status cell colour
+      const stAddr = XLSX.utils.encode_cell({ r: excelRow, c: 11 });
+      if (ws[stAddr]) ws[stAddr].s = { fill:{fgColor:{rgb:fg}}, font:{bold:true,color:{rgb:fc},sz:11,name:'Calibri'}, alignment:{horizontal:'center',vertical:'center'} };
+    });
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Stacked List');
+    XLSX.writeFile(wb, `${proj.replace(/\s+/g,'_')}_Stacked_${date}.xlsx`, { bookType:'xlsx', type:'binary', cellStyles:true });
+  }
+
+  // ── Per-Layout Print Functions ────────────────────────────────────────────────
+  function _getPrintCSS() {
+    return `
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Rajdhani',sans-serif;background:#fff;color:#1e293b;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:28px 36px}
+.print-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;padding-bottom:14px;border-bottom:2px solid #e2e8f0}
+.print-proj{font-size:20px;font-weight:700;letter-spacing:2px;color:#0a0e1a}
+.print-sub{font-size:12px;color:#546e7a;margin-top:3px}
+.print-meta{text-align:right;font-size:12px;color:#546e7a}
+.layout-tag{display:inline-block;background:#0077ff;color:#fff;font-size:11px;font-weight:700;letter-spacing:2px;padding:3px 10px;border-radius:4px;margin-bottom:6px}
+.matrix-wrapper{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-family:'Rajdhani',sans-serif}
+th.row-label{background:#f0f4f8;color:#37474f;font-size:11px;letter-spacing:1px;min-width:120px;padding:8px 12px;text-align:left;border:1px solid #b0bec5}
+th.col-header{padding:0;height:100px;vertical-align:bottom;border:1px solid #b0bec5;background:#fff}
+.rotated-wrap{display:flex;align-items:flex-end;justify-content:center;height:100%;padding-bottom:6px}
+.rotated-wrap span{display:inline-block;transform:rotate(-90deg);transform-origin:center center;white-space:nowrap;font-size:12px;font-weight:800;letter-spacing:1.5px;padding:3px 5px;border-radius:4px;color:#fff}
+td.label-cell{color:#fff;font-weight:800;font-size:12px;letter-spacing:1px;padding:6px 10px;text-align:left;border:1px solid #546e7a}
+td{text-align:center;font-weight:700;font-size:14px;border:1px solid #b0bec5;padding:8px 6px;min-width:56px;height:46px}
+.cell-diag{background:repeating-linear-gradient(45deg,#b0bec5,#b0bec5 4px,#cfd8dc 4px,#cfd8dc 10px);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.cell-na{background:#cfd8dc;color:#90a4ae}
+.cell-zero{background:#00C853;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.cell-low{background:#FFD600;color:#333;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.cell-medium{background:#FF6D00;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.cell-high{background:#FF1744;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.layout-rotated .rotated-wrap span{transform:none!important;font-size:13px!important;padding:4px 8px}
+.layout-rotated th.col-header{height:auto;vertical-align:middle;padding:8px 4px}
+.stacked-table{border-collapse:collapse;width:100%;background:#fff;border:1px solid #ccd6e0;border-radius:8px;overflow:hidden}
+.stacked-table th{background:#f0f4f8;color:#37474f;font-size:11px;font-weight:800;letter-spacing:1px;padding:10px 14px;border-bottom:2px solid #78909c;text-align:left}
+.stacked-table td{padding:8px 12px;font-size:12px;border-bottom:1px solid #e0e8f0}
+.st-val{font-family:'Share Tech Mono',monospace;font-size:14px;font-weight:800;border-radius:5px;padding:3px 10px;display:inline-block;min-width:50px;text-align:center;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+@media print{body{padding:16px}@page{margin:1cm}}`;
+  }
+
+  function _buildPrintShell(titleExtra, tableHTML) {
+    const date   = new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+    const proj   = document.getElementById('projName').value  || 'BIMZ PROJECT';
+    const phase  = document.getElementById('projPhase').value || '';
+    const hi     = calcHeatIndex() ?? '—';
+    const hiColor = hi >= 70 ? '#FF1744' : hi >= 40 ? '#FF6D00' : hi >= 20 ? '#FFD600' : '#00C853';
+    const modeLabel = { open:'New + Active', total:'Total Clashes', resolved:'Resolved', heatmap:'Heatmap' }[currentMode] || currentMode;
+
+    return `<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>BIMZ — ${titleExtra} — ${proj}</title>
+<style>${_getPrintCSS()}</style></head><body>
+<div class="print-top">
+  <div>
+    <div class="print-proj">${proj}${phase?' — '+phase:''}</div>
+    <div class="print-sub">Mode: ${modeLabel} &nbsp;|&nbsp; Heat Index: <span style="color:${hiColor};font-weight:700">${hi}/100</span> &nbsp;|&nbsp; Generated by BIMZ Clash Matrix v6.0</div>
+  </div>
+  <div class="print-meta">
+    <div class="layout-tag">${titleExtra}</div>
+    <div>Date: ${date}</div>
+    <div>by ZIAD ANTER · DIRECT Engineering Consultants</div>
+  </div>
+</div>
+<div class="matrix-wrapper">${tableHTML}</div>
+<div style="display:flex;gap:14px;align-items:center;margin-top:14px;flex-wrap:wrap">
+  <span style="font-size:11px;font-weight:700;color:#546e7a">LEGEND:</span>
+  <div style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#546e7a"><div style="width:12px;height:12px;border-radius:3px;background:#00C853;-webkit-print-color-adjust:exact;print-color-adjust:exact"></div>0 — No Clash</div>
+  <div style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#546e7a"><div style="width:12px;height:12px;border-radius:3px;background:#FFD600;-webkit-print-color-adjust:exact;print-color-adjust:exact"></div>1–10 — Low</div>
+  <div style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#546e7a"><div style="width:12px;height:12px;border-radius:3px;background:#FF6D00;-webkit-print-color-adjust:exact;print-color-adjust:exact"></div>11–50 — Medium</div>
+  <div style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#546e7a"><div style="width:12px;height:12px;border-radius:3px;background:#FF1744;-webkit-print-color-adjust:exact;print-color-adjust:exact"></div>&gt;50 — High</div>
+</div>
+<script>window.onload=()=>window.print()<\/script></body></html>`;
+  }
+
+  function _buildTriangleTableHTML() {
+    const filtDiscs = activeFilter ? disciplines.filter(d => d === activeFilter || getCell(activeFilter, d)) : disciplines;
+    const _round = (document.getElementById('roundLabel')||{}).value||'';
+    const _phase = document.getElementById('projPhase').value.trim();
+    const _cornerHTML = _round
+      ? `<div style="font-size:18px;font-weight:800;color:#0077ff;font-family:'Share Tech Mono',monospace">${_round}</div>`
+      : `<div style="font-size:10px;color:#90a4ae;font-weight:700">DISCIPLINE</div>`;
+    let html = `<table><thead><tr><th class="row-label" style="vertical-align:middle">${_cornerHTML}</th>`;
+    filtDiscs.forEach((d,di) => {
+      const color = getDiscColor(disciplines.indexOf(d));
+      html += `<th class="col-header"><div class="rotated-wrap"><span style="background:${color}">${getDiscDisplayName(d)}</span></div></th>`;
+    });
+    html += '</tr></thead><tbody>';
+    filtDiscs.forEach((r, ri) => {
+      const rowColor = getDiscColor(disciplines.indexOf(r));
+      html += `<tr><td class="label-cell" style="background:${rowColor}">${getDiscDisplayName(r)}</td>`;
+      filtDiscs.forEach((c, ci) => {
+        const origRi = disciplines.indexOf(r), origCi = disciplines.indexOf(c);
+        if (origCi < origRi) { html += `<td class="cell-diag"></td>`; return; }
+        if (origCi === origRi) { html += `<td class="cell-diag"></td>`; return; }
+        const clash = getCell(r, c); const key = overrideKey(r, c);
+        const hasOv = cellOverrides[key] !== undefined;
+        if (!clash && !hasOv) { html += `<td class="cell-na">–</td>`; return; }
+        const val = hasOv ? cellOverrides[key] : getValue(clash, null, r, c);
+        const cls = cellClass(val);
+        html += `<td class="${cls}">${val.toLocaleString()}</td>`;
+      });
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    return html;
+  }
+
+  function _buildRotatedTableHTML() {
+    const filtDiscs = activeFilter ? disciplines.filter(d => d === activeFilter || getCell(activeFilter, d)) : disciplines;
+    const _round = (document.getElementById('roundLabel')||{}).value||'';
+    const _cornerHTML = _round
+      ? `<div style="font-size:16px;font-weight:800;color:#0077ff;font-family:'Share Tech Mono',monospace">${_round}</div>`
+      : `<div style="font-size:10px;color:#90a4ae;font-weight:700">DISCIPLINE</div>`;
+    // Horizontal headers
+    let html = `<table><thead><tr><th class="row-label" style="vertical-align:middle">${_cornerHTML}</th>`;
+    filtDiscs.forEach((d) => {
+      const color = getDiscColor(disciplines.indexOf(d));
+      html += `<th style="background:#fff;border:1px solid #b0bec5;padding:8px 6px;vertical-align:middle;text-align:center;">
+        <span style="background:${color};color:#fff;border-radius:4px;padding:4px 8px;font-size:12px;font-weight:800;letter-spacing:1px;white-space:nowrap;display:inline-block;">${getDiscDisplayName(d)}</span>
+      </th>`;
+    });
+    html += '</tr></thead><tbody>';
+    filtDiscs.forEach((r) => {
+      const rowColor = getDiscColor(disciplines.indexOf(r));
+      const origRi = disciplines.indexOf(r);
+      html += `<tr><td class="label-cell" style="background:${rowColor}">${getDiscDisplayName(r)}</td>`;
+      filtDiscs.forEach((c) => {
+        const origCi = disciplines.indexOf(c);
+        if (origCi < origRi) {
+          html += `<td class="cell-diag"></td>`; return;
+        }
+        if (origCi === origRi) { html += `<td class="cell-diag"></td>`; return; }
+        const clash = getCell(r, c); const key = overrideKey(r, c);
+        const hasOv = cellOverrides[key] !== undefined;
+        if (!clash && !hasOv) { html += `<td class="cell-na">–</td>`; return; }
+        const val = hasOv ? cellOverrides[key] : getValue(clash, null, r, c);
+        html += `<td class="${cellClass(val)}">${val.toLocaleString()}</td>`;
+      });
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    return html;
+  }
+
+  function _buildStackedTableHTML() {
+    const filtDiscs = activeFilter ? disciplines.filter(d => d === activeFilter || getCell(activeFilter, d)) : disciplines;
+    const pairs = [];
+    filtDiscs.forEach((r, ri) => filtDiscs.forEach((c, ci) => {
+      if (ci <= ri) return;
+      const clash = getCell(r, c); const key = overrideKey(r, c);
+      const hasOv = cellOverrides[key] !== undefined;
+      if (!clash && !hasOv) return;
+      const val = hasOv ? cellOverrides[key] : getValue(clash, null, r, c);
+      pairs.push({ r, c, val });
+    }));
+    pairs.sort((a, b) => b.val - a.val);
+    const maxVal = pairs[0]?.val || 1;
+    const modeLabel = currentMode === 'open' ? 'New+Active' : currentMode === 'total' ? 'Total' : currentMode === 'resolved' ? 'Resolved' : 'New+Active';
+    let html = `<table class="stacked-table"><thead><tr><th>PAIR</th><th>${modeLabel.toUpperCase()}</th><th>SEVERITY BAR</th><th>STATUS</th></tr></thead><tbody>`;
+    pairs.forEach(({ r, c, val }) => {
+      const cls = cellClass(val);
+      const bg = cls==='cell-zero'?'#00C853':cls==='cell-low'?'#FFD600':cls==='cell-medium'?'#FF6D00':'#FF1744';
+      const fc = cls==='cell-low'?'#333':'#fff';
+      const barW = Math.round((val / maxVal) * 100);
+      const rColor = getDiscColor(disciplines.indexOf(r)), cColor = getDiscColor(disciplines.indexOf(c));
+      const statusLabel = val===0?'✅ CLEAR':val<=10?'🟡 LOW':val<=50?'🟠 MEDIUM':'🔴 HIGH';
+      html += `<tr>
+        <td><span style="background:${rColor};color:#fff;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:800;margin-right:3px">${getDiscDisplayName(r)}</span>
+        <span style="color:#78909c;font-size:11px">↔</span>
+        <span style="background:${cColor};color:#fff;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:800;margin-left:3px">${getDiscDisplayName(c)}</span></td>
+        <td style="text-align:center"><span class="st-val" style="background:${bg};color:${fc}">${val.toLocaleString()}</span></td>
+        <td><div style="display:flex;align-items:center;gap:6px">
+          <div class="st-bar-wrap" style="width:120px"><div class="st-bar" style="width:${barW}%;background:${bg};height:8px;border-radius:4px;-webkit-print-color-adjust:exact;print-color-adjust:exact"></div></div>
+          <span style="font-size:10px;color:#78909c">${barW}%</span></div></td>
+        <td style="text-align:center;font-size:12px;font-weight:700">${statusLabel}</td>
+      </tr>`;
+    });
+    if (!pairs.length) html += `<tr><td colspan="4" style="text-align:center;color:#78909c;padding:20px">No data.</td></tr>`;
+    html += '</tbody></table>';
+    return html;
+  }
+
+  function printLayoutTriangle() {
+    const win = window.open('', '_blank', 'width=1200,height=900');
+    win.document.write(_buildPrintShell('⊞ TRIANGLE VIEW', _buildTriangleTableHTML(), false));
+    win.document.close();
+  }
+  function printLayoutRotated() {
+    const win = window.open('', '_blank', 'width=1200,height=900');
+    win.document.write(_buildPrintShell('⊟ ROTATED VIEW', _buildRotatedTableHTML(), false));
+    win.document.close();
+  }
+  function printLayoutStacked() {
+    const win = window.open('', '_blank', 'width=1200,height=900');
+    win.document.write(_buildPrintShell('☰ STACKED LIST VIEW', _buildStackedTableHTML(), true));
+    win.document.close();
+  }
+  function printLayoutAll() {
+    const date   = new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+    const proj   = document.getElementById('projName').value  || 'BIMZ PROJECT';
+    const phase  = document.getElementById('projPhase').value || '';
+    const hi     = calcHeatIndex() ?? '—';
+    const hiColor = hi >= 70 ? '#FF1744' : hi >= 40 ? '#FF6D00' : hi >= 20 ? '#FFD600' : '#00C853';
+    const modeLabel = { open:'New + Active', total:'Total Clashes', resolved:'Resolved', heatmap:'Heatmap' }[currentMode] || currentMode;
+    const sharedStyle = _getPrintCSS();
+    const triHTML = _buildTriangleTableHTML();
+    const rotHTML = _buildRotatedTableHTML();
+    const stHTML  = _buildStackedTableHTML();
+    const header = (title) => `
+      <div class="print-top">
+        <div>
+          <div class="print-proj">${proj}${phase?' — '+phase:''}</div>
+          <div class="print-sub">Mode: ${modeLabel} &nbsp;|&nbsp; Heat Index: <span style="color:${hiColor};font-weight:700">${hi}/100</span> &nbsp;|&nbsp; BIMZ v6.0</div>
+        </div>
+        <div class="print-meta">
+          <div class="layout-tag">${title}</div>
+          <div>Date: ${date}</div>
+        </div>
+      </div>`;
+    const legend = `<div style="display:flex;gap:14px;align-items:center;margin-top:12px;flex-wrap:wrap">
+      <span style="font-size:11px;font-weight:700;color:#546e7a">LEGEND:</span>
+      <div style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#546e7a"><div style="width:12px;height:12px;border-radius:3px;background:#00C853;-webkit-print-color-adjust:exact;print-color-adjust:exact"></div>0</div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#546e7a"><div style="width:12px;height:12px;border-radius:3px;background:#FFD600;-webkit-print-color-adjust:exact;print-color-adjust:exact"></div>1–10</div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#546e7a"><div style="width:12px;height:12px;border-radius:3px;background:#FF6D00;-webkit-print-color-adjust:exact;print-color-adjust:exact"></div>11–50</div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#546e7a"><div style="width:12px;height:12px;border-radius:3px;background:#FF1744;-webkit-print-color-adjust:exact;print-color-adjust:exact"></div>&gt;50</div>
+    </div>`;
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>BIMZ All Views — ${proj}</title>
+<style>${sharedStyle}
+.page-break{page-break-after:always;margin-bottom:0}
+@media print{body{padding:16px}@page{margin:1cm}}
+</style></head><body>
+<div class="page-break">${header('⊞ TRIANGLE VIEW')}<div class="matrix-wrapper">${triHTML}</div>${legend}</div>
+<div class="page-break">${header('⊟ ROTATED VIEW')}<div class="matrix-wrapper">${rotHTML}</div>${legend}</div>
+<div>${header('☰ STACKED LIST VIEW')}<div class="matrix-wrapper">${stHTML}</div></div>
+<script>window.onload=()=>window.print()<\/script></body></html>`;
+    const win = window.open('', '_blank', 'width=1200,height=900');
+    win.document.write(html);
+    win.document.close();
+  }
   const ____renderMatrixLayout = renderMatrix;
   renderMatrix = function() {
     ____renderMatrixLayout();
-    if (currentLayout === 'rotated') { renderRotatedMatrix(); document.getElementById('matrixTable').classList.add('layout-rotated'); }
-    else if (currentLayout === 'stacked') { document.getElementById('matrixTable').style.display = 'none'; renderStackedMatrix(); document.getElementById('stackedView').style.display = 'block'; }
+    applyAllLayouts();
   };
 
-  // Init layout on page load
-  applyLayout();
+  // (layout is applied automatically after buildMatrix → renderMatrix → applyAllLayouts)
 
   // ═══════════════════════════════════════════════════════════════════════════════
   // ── COMPARE TAB — IMPROVED RENDERING ─────────────────────────────────────────
