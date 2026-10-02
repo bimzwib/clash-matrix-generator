@@ -6,33 +6,37 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BIMZ Clash Matrix Generator v6.0</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap');
 
   :root {
-    --bg:       #0a0e1a;
-    --surface:  #111827;
-    --card:     #161d2e;
-    --border:   #1e2d45;
-    --accent:   #00d4ff;
-    --accent2:  #0077ff;
-    --text:     #c8d8f0;
-    --muted:    #4a6080;
-    --green:    #00e676;
-    --yellow:   #ffd600;
-    --orange:   #ff6d00;
-    --red:      #ff1744;
+    color-scheme: light;
+    --bg:       #f0f4f8;
+    --surface:  #ffffff;
+    --card:     #f8fafc;
+    --border:   #cbd5e1;
+    --accent:   #0077ff;
+    --accent2:  #0055cc;
+    --text:     #1e293b;
+    --title:    #0f172a;
+    --muted:    #64748b;
+    --green:    #16a34a;
+    --yellow:   #ca8a04;
+    --orange:   #ea580c;
+    --red:      #dc2626;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--text); font-family: 'Rajdhani', sans-serif; min-height: 100vh; overflow-x: hidden; }
-  body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; z-index: 0; }
+  body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(rgba(0,119,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(0,119,255,0.04) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; z-index: 0; }
 
   .container { position: relative; z-index: 1; max-width: 1400px; margin: 0 auto; padding: 24px; }
 
   header { display: flex; align-items: center; gap: 16px; margin-bottom: 32px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
   .logo-box { width: 48px; height: 48px; background: linear-gradient(135deg, var(--accent2), var(--accent)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 700; color: #fff; font-family: 'Share Tech Mono', monospace; flex-shrink: 0; }
-  header h1 { font-size: 26px; font-weight: 700; letter-spacing: 2px; color: #fff; }
+  header h1 { font-size: 26px; font-weight: 700; letter-spacing: 2px; color: var(--title); }
   header h1 span { color: var(--accent); }
   .version-tag { margin-left: auto; font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--muted); background: var(--surface); border: 1px solid var(--border); padding: 4px 10px; border-radius: 4px; }
 
@@ -50,7 +54,7 @@
   .upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); background: rgba(0,212,255,0.05); }
   .upload-zone:hover::before, .upload-zone.drag-over::before { opacity: 1; }
   .upload-icon { font-size: 48px; margin-bottom: 16px; display: block; filter: drop-shadow(0 0 12px rgba(0,212,255,0.4)); }
-  .upload-zone h2 { font-size: 20px; font-weight: 600; color: #fff; margin-bottom: 8px; letter-spacing: 1px; }
+  .upload-zone h2 { font-size: 20px; font-weight: 600; color: var(--title); margin-bottom: 8px; letter-spacing: 1px; }
   .upload-zone p { color: var(--muted); font-size: 14px; line-height: 1.6; }
   .upload-zone p strong { color: var(--accent); }
   #fileInput { display: none; }
@@ -124,13 +128,13 @@
   #matrixSection { display: none; margin-top: 28px; animation: fadeIn 0.5s ease; }
   .section-title { font-size: 18px; font-weight: 700; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
   .section-title::after { content: ''; flex: 1; height: 1px; background: linear-gradient(to right, var(--border), transparent); }
-  .matrix-wrapper { background: #fff; border-radius: 12px; border: 1px solid #ccd6e0; overflow: visible; }
+  .matrix-wrapper { background: #fff; border-radius: 12px; border: 1px solid #ccd6e0; overflow-x: auto; overflow-y: visible; }
   #matrixTable { border-collapse: collapse; width: 100%; min-width: 400px; background: #fff; }
   #matrixTable th, #matrixTable td { border: 1px solid #b0bec5; text-align: center; font-weight: 700; font-size: 13px; letter-spacing: 0.5px; min-width: 70px; }
-  #matrixTable th.col-header { padding: 0; height: 110px; vertical-align: bottom; background: #fff; font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; border-bottom: 2px solid #78909c; }
-  #matrixTable th.col-header .rotated-wrap { display: flex; align-items: flex-end; justify-content: center; height: 100%; padding-bottom: 6px; }
-  #matrixTable th.col-header span { display: inline-block; transform: rotate(-90deg); transform-origin: center center; white-space: nowrap; font-size: 13px; font-weight: 800; letter-spacing: 2px; padding: 4px 6px; border-radius: 4px; color: #fff; }
-  #matrixTable th.row-label { background: #f0f4f8; color: #37474f; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; min-width: 120px; padding: 8px 12px; text-align: left; border-bottom: 2px solid #78909c; }
+  #matrixTable th.col-header { padding: 6px 2px; height: auto; vertical-align: bottom; background: #fff; font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; border-bottom: 2px solid #78909c; }
+  #matrixTable th.col-header .rotated-wrap { display: flex; align-items: flex-end; justify-content: center; height: auto; padding-bottom: 2px; }
+  #matrixTable th.col-header span { display: inline-block; writing-mode: vertical-rl; transform: rotate(180deg); white-space: normal; word-break: break-word; max-height: 330px; text-align: left; line-height: 1.25; font-size: 12px; font-weight: 800; letter-spacing: 1px; padding: 8px 5px; border-radius: 4px; color: #fff; }
+  #matrixTable th.row-label { background: #f0f4f8; color: #37474f; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; width: 230px; min-width: 150px; padding: 8px 12px; text-align: left; border-bottom: 2px solid #78909c; }
   #matrixTable td { padding: 14px 10px; font-family: 'Share Tech Mono', monospace; font-size: 18px; font-weight: 800; transition: all 0.15s; position: relative; cursor: default; height: 56px; }
   #matrixTable td:hover { filter: brightness(0.88); z-index: 2; }
   .cell-diag { background: #b0bec5 !important; background-image: repeating-linear-gradient(45deg, rgba(0,0,0,0.06) 0px, rgba(0,0,0,0.06) 4px, transparent 4px, transparent 10px) !important; }
@@ -141,7 +145,7 @@
   .cell-na     { background: #cfd8dc; color: #90a4ae; font-size: 18px; }
   .cell-thresh { outline: 3px solid #fff176 !important; outline-offset: -3px; }
   .cell-dimmed { opacity: 0.25; }
-  #matrixTable td.label-cell { text-align: left; padding-left: 14px; font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 800; letter-spacing: 1.5px; color: #fff; border-right: 2px solid #78909c; cursor: pointer; }
+  #matrixTable td.label-cell { text-align: left; padding-left: 14px; width: 230px; min-width: 150px; max-width: 280px; white-space: normal; word-break: break-word; line-height: 1.25; font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 800; letter-spacing: 0.5px; color: #fff; border-right: 2px solid #78909c; cursor: pointer; }
   #matrixTable td.label-cell:hover { filter: brightness(0.8); }
 
   /* ── Discipline Summary Panel ── */
@@ -157,7 +161,7 @@
   /* ── Compare Tab ── */
   .compare-zone { border: 2px dashed var(--border); border-radius: 12px; padding: 32px; text-align:center; cursor:pointer; background:var(--card); margin-bottom:16px; transition:all 0.3s; }
   .compare-zone:hover { border-color:var(--accent); }
-  .compare-zone h3 { font-size:16px; font-weight:700; color:#fff; margin-bottom:6px; }
+  .compare-zone h3 { font-size:16px; font-weight:700; color:var(--title); margin-bottom:6px; }
   .compare-zone p { font-size:13px; color:var(--muted); }
   .compare-zone input[type=file] { display:none; }
   .diff-table { border-collapse:collapse; width:100%; }
@@ -182,7 +186,7 @@
     background: linear-gradient(135deg, var(--accent2), var(--accent));
   }
   .round-name-input {
-    flex:1; background:var(--surface); border:1px solid var(--border); color:#fff;
+    flex:1; background:var(--surface); border:1px solid var(--border); color:var(--text);
     padding:8px 12px; border-radius:8px; font-family:'Rajdhani',sans-serif;
     font-size:14px; font-weight:700; letter-spacing:1px;
   }
@@ -250,7 +254,7 @@
   /* ── Clear Banner ── */
   #clearBanner {
     display:none; position:fixed; top:0; left:0; right:0; z-index:2000;
-    background:linear-gradient(135deg,#0d2b14,#0a1f10);
+    background:linear-gradient(135deg,#ecfdf5,#d1fae5);
     border-bottom:2px solid var(--green);
     padding:14px 24px; animation:slideDown 0.4s ease;
     box-shadow:0 4px 32px rgba(0,230,118,0.25);
@@ -269,7 +273,7 @@
   .cb-close:hover { color:var(--red); }
 
   /* ── Tooltip ── */
-  #floatTooltip { display: none; position: fixed; background: var(--surface); border: 1px solid var(--accent); border-radius: 8px; padding: 10px 14px; font-family: 'Rajdhani', sans-serif; font-size: 13px; white-space: nowrap; z-index: 9999; color: var(--text); box-shadow: 0 8px 24px rgba(0,0,0,0.6); pointer-events: none; line-height: 1.8; text-align: left; }
+  #floatTooltip { display: none; position: fixed; background: var(--surface); border: 1px solid var(--accent); border-radius: 8px; padding: 10px 14px; font-family: 'Rajdhani', sans-serif; font-size: 13px; white-space: nowrap; z-index: 9999; color: var(--text); box-shadow: 0 8px 24px rgba(15,23,42,0.22); pointer-events: none; line-height: 1.8; text-align: left; }
 
   /* ── Legend ── */
   .legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 16px; padding: 14px 18px; background: #fff; border: 1px solid #ccd6e0; border-radius: 10px; align-items: center; }
@@ -289,6 +293,30 @@
   .print-header { display: none; }
   .print-stats  { display: none; }
   .print-heat   { display: none; }
+
+
+  /* ── All Clash Tests table ── */
+  .tests-toolbar { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:10px; }
+  .tests-toolbar input { flex:1; min-width:220px; max-width:440px; background:#fff; border:1px solid #cbd5e1; border-radius:8px; padding:9px 12px; font:600 13px 'Rajdhani',sans-serif; color:#1e293b; }
+  .tests-toolbar input:focus { outline:none; border-color:var(--accent); }
+  #stackedCount { font-size:12px; font-weight:700; letter-spacing:1px; color:#546e7a; }
+  .tests-scroll { overflow:auto; max-height:72vh; background:#fff; border:1px solid #ccd6e0; border-radius:12px; }
+  .tests-table { border-collapse:separate; border-spacing:0; width:100%; min-width:1060px; }
+  .tests-table th { position:sticky; top:0; z-index:2; background:#f0f4f8; color:#37474f; font-size:11px; font-weight:800; letter-spacing:.5px; padding:11px 7px; text-align:left; border-bottom:2px solid #78909c; white-space:nowrap; }
+  .tests-table th.c, .tests-table td.c { text-align:center; }
+  .tests-table td { padding:9px 7px; font-size:13px; color:#1e293b; border-bottom:1px solid #e6edf3; vertical-align:middle; }
+  .tests-table tbody tr:nth-child(even) td { background:#fafcfe; }
+  .tests-table tbody tr:hover td { background:#eef5ff; }
+  .tests-table td.st-name { min-width:210px; max-width:330px; word-break:break-word; font-weight:600; font-size:12px; line-height:1.35; }
+  .tests-table td.num { font-family:'Share Tech Mono',monospace; font-weight:700; text-align:center; }
+  .tests-table td.num.zero { color:#b0bec5; font-weight:500; }
+  .tests-table .t-chip { display:inline-block; color:#fff; border-radius:5px; padding:3px 8px; font-size:11px; font-weight:800; line-height:1.3; word-break:break-word; max-width:200px; }
+  .tests-table .g-chip { display:inline-block; min-width:26px; padding:2px 8px; border-radius:5px; font-weight:800; font-size:12px; color:#37474f; text-align:center; }
+  .tests-table .v-chip { display:inline-block; font-family:'Share Tech Mono',monospace; font-size:15px; font-weight:800; border-radius:6px; padding:3px 12px; min-width:52px; text-align:center; }
+  .tests-table .s-pill { display:inline-block; font-size:11px; font-weight:800; letter-spacing:.5px; border-radius:20px; padding:3px 11px; }
+  .tests-table .bar-wrap { height:8px; background:#e0e8f0; border-radius:4px; overflow:hidden; min-width:56px; }
+  .tests-table .bar-fill { height:100%; border-radius:4px; }
+  .tests-table tfoot td { position:sticky; bottom:0; background:#f0f4f8; font-weight:800; border-top:2px solid #78909c; border-bottom:none; }
 
   /* ── v6: Light Mode ── */
   body.light-mode {
@@ -632,6 +660,24 @@
   .disc-val-bubble { font-family: 'Share Tech Mono', monospace; font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 5px; }
   .disc-trend-arrow { font-size: 14px; color: var(--muted); }
 </style>
+<style id="matrixLayoutFix">
+/* column headers: real vertical text (takes its rotated size in layout) so columns stay narrow and the header grows to fit the full name */
+#matrixTable th.col-header, #matrixTable.compact th.col-header, #matrixTable.expanded th.col-header { height:auto !important; width:70px; min-width:70px; max-width:90px; vertical-align:bottom; }
+#matrixTable th.col-header .rotated-wrap { height:auto; display:flex; align-items:flex-end; justify-content:center; padding:6px 0; }
+#matrixTable th.col-header span { writing-mode:vertical-rl; transform:rotate(180deg) !important; white-space:normal; max-height:340px; text-align:left; font-size:12px; letter-spacing:1px; line-height:1.2; padding:8px 5px; overflow-wrap:anywhere; }
+/* row labels: show the full name (wrap instead of cutting) */
+#matrixTable th.row-label { min-width:200px; }
+#matrixTable td.label-cell { min-width:200px; max-width:320px; white-space:normal; overflow-wrap:anywhere; line-height:1.25; font-size:13px; letter-spacing:0.5px; }
+/* data cells: fixed compact width regardless of name length */
+#matrixTable td:not(.label-cell) { min-width:60px; }
+/* rotated (horizontal-header) layout: wrap long names */
+#matrixTableRotated th.rot-col-header { max-width:170px; }
+#matrixTableRotated th.rot-col-header span { white-space:normal !important; display:inline-block; max-width:150px; overflow-wrap:anywhere; line-height:1.2; }
+#matrixTableRotated td.label-cell { min-width:200px; max-width:320px; white-space:normal; overflow-wrap:anywhere; line-height:1.25; }
+/* wide matrices scroll inside the card instead of spilling over the page */
+.matrix-wrapper { overflow-x:auto; max-width:100%; }
+#matrixTable { width:auto; min-width:100%; }
+</style>
 </head>
 <body>
 <div id="floatTooltip"></div>
@@ -745,7 +791,6 @@
       <div style="font-size:12px;color:var(--muted);letter-spacing:1px;margin-top:2px;">NAVISWORKS CLASH REPORT ANALYZER</div>
     </div>
     <div class="version-tag">v6.0 · by ZIAD ANTER</div>
-    <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn" title="Toggle Light/Dark">🌙 DARK</button>
     <button class="theme-toggle" onclick="openShareModal()" id="shareBtn" style="display:none" title="Share Summary">📤 SHARE</button>
   </header>
 
@@ -784,6 +829,19 @@
     <div class="controls">
       <button class="btn btn-primary" id="buildBtn" disabled onclick="buildMatrix()">⚙ BUILD MATRIX</button>
       <button class="btn btn-excel"   id="exportBtn"  style="display:none" onclick="exportExcel()">📊 EXPORT EXCEL</button>
+      <div id="exportOrderWrap" style="display:none;align-items:center;gap:8px;" title="Row order of the Clash Tests sheet in the Excel export">
+        <label style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;letter-spacing:1px;color:var(--muted);white-space:nowrap;">EXCEL ORDER:</label>
+        <select id="excelOrder" style="background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 12px;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">
+          <option value="big">LARGEST FIRST (Total ▼)</option>
+          <option value="small">SMALLEST FIRST (Total ▲)</option>
+          <option value="group_hml">BY GROUP: H → M → L (largest first)</option>
+          <option value="group_lmh">BY GROUP: L → M → H (largest first)</option>
+          <option value="open_big">MOST OPEN FIRST (New+Active ▼)</option>
+          <option value="open_small">LEAST OPEN FIRST (New+Active ▲)</option>
+          <option value="name">TEST NAME A–Z</option>
+          <option value="file">FILE ORDER (as uploaded)</option>
+        </select>
+      </div>
       <button class="btn btn-csv"     id="exportCsvBtn" style="display:none" onclick="exportCSV()">📋 EXPORT CSV</button>
       <button class="btn btn-print"   id="printBtn"   style="display:none" onclick="printMatrix()">🖨 PRINT / PDF</button>
       <button class="btn" id="editBtn" style="display:none;background:linear-gradient(135deg,#6a1b9a,#4527a0);color:#fff;border:none;" onclick="openEditPanel()">✏ EDIT CLASHES</button>
@@ -871,7 +929,7 @@
       <!-- ── View 1: TRIANGLE ── -->
       <div class="all-layouts-block">
         <div class="layout-block-header">
-          <span class="layout-block-title">⊞ 1 — TRIANGLE VIEW</span>
+          <span class="layout-block-title">⊞ 1 — MATRIX VIEW</span>
           <div style="display:flex;gap:8px;">
             <button class="btn-print-layout" onclick="printLayoutTriangle()">🖨 PRINT / PDF</button>
             <button class="btn-print-layout" onclick="exportExcelTriangle()" style="background:linear-gradient(135deg,#1d6f42,#21a366);">📊 EXCEL</button>
@@ -887,11 +945,15 @@
       <!-- ── View 2: STACKED ── -->
       <div class="all-layouts-block" id="stackedBlock" style="display:none;">
         <div class="layout-block-header">
-          <span class="layout-block-title">☰ 2 — STACKED LIST VIEW</span>
+          <span class="layout-block-title">☰ 2 — ALL CLASH TESTS</span>
           <div style="display:flex;gap:8px;">
             <button class="btn-print-layout" onclick="printLayoutStacked()">🖨 PRINT / PDF</button>
             <button class="btn-print-layout" onclick="exportExcelStacked()" style="background:linear-gradient(135deg,#1d6f42,#21a366);">📊 EXCEL</button>
           </div>
+        </div>
+        <div class="tests-toolbar">
+          <input id="stackedSearch" type="text" placeholder="🔍 Search test name / category / group…" oninput="renderStackedMatrix()">
+          <span id="stackedCount"></span>
         </div>
         <div id="stackedView"></div>
       </div>
@@ -1155,36 +1217,75 @@
     const cleaned = u.replace(/^[.\-\s]+|[.\-\s]+$/g, '');
     if (TYPO_FIX[u])       return TYPO_FIX[u];
     if (TYPO_FIX[cleaned]) return TYPO_FIX[cleaned];
-    // Strip noise (zones, project prefix, trailing numbers)
+
+    // If the name contains "/" it is a full Navisworks category name
+    // (e.g. "EL-Ducts/Duct Fittings/Duct Insulations/Duct Linings")
+    // Preserve it as-is — do NOT strip or reduce it
+    if (trimmed.includes('/')) return trimmed;
+
+    // Strip zone/floor/project noise ONLY when what is left is a short abbreviation (HVAC, FF, EL ...).
+    // A real category name such as "GS-Mechanical Equipment" or "ST-Structural Columns" is kept COMPLETE —
+    // it used to be cut down to its last word ("EQUIPMENT", "COLUMNS").
     const denoised = stripNoise(cleaned);
     if (TYPO_FIX[denoised]) return TYPO_FIX[denoised];
-    // Last resort: if multi-word, try just the last word
-    // e.g. "TOWER-A HVAC" → last word "HVAC" after stripNoise didn't catch it
     const lastWord = denoised.replace(/.*[\s\-_]/, '');
     if (lastWord && lastWord !== denoised && TYPO_FIX[lastWord]) return TYPO_FIX[lastWord];
-    return lastWord && lastWord !== denoised ? lastWord : (denoised || cleaned || u);
+    const KNOWN = new Set([...PRIORITY_ORDER, ...Object.values(TYPO_FIX), 'WS','GS','FS','ME','BMS']);
+    if (KNOWN.has(denoised)) return denoised;
+    if (lastWord && KNOWN.has(lastWord)) return lastWord;
+    const isCode = x => x && !/\s/.test(x) && !/[-_]/.test(x) && x.length <= 8;
+    if (isCode(cleaned) && cleaned.length <= 4) return u;   // short code (e.g. "hvac", "st")
+    if (denoised !== cleaned && isCode(denoised)) return denoised;   // "XYZ-1" -> "XYZ"
+    return trimmed;                                      // anything else: full name, untouched
   }
 
   function parseDisciplines(tName, fName) {
     const norm = s => fixTypo(s.trim());
 
-    // Extended separator: VS, V/S, AND, X (word), &, /, |, \, +
-    const SEP = /\s+(?:VS|V\/S|AND|X)\s+|\s*[&\/|\\+]\s*/i;
+    // PRIMARY separator: _vs_ or " vs " (word boundary, case-insensitive)
+    // This handles "H_EL-Ducts/Duct Fittings/..._vs_EL-Ducts/..."
+    // We do NOT split on "/" because Navisworks category names contain slashes
 
-    // 1. Try test name first
-    // If 3+ parts (e.g. "TOWER-A HVAC VS FF"), take last token before SEP and first after
-    let p = tName.split(SEP).map(s => s.trim()).filter(Boolean);
+    // 1. Try "_vs_" underscore-bounded (most common from Navisworks filenames + test names)
+    const VS_UNDERSCORE = /_vs_/i;
+    let p = tName.split(VS_UNDERSCORE).map(s => s.trim()).filter(Boolean);
+    if (p.length >= 2) {
+      // Strip leading group prefix like "H_", "L_", "M_" from first part
+      let d1 = p[0].replace(/^[A-Z]+_/i, '').trim();
+      let d2 = p[1].trim();
+      return [norm(d1), norm(d2)];
+    }
+
+    // 2. Try " vs " (space-bounded, for test names without underscores)
+    const VS_SPACE = /\s+vs\s+/i;
+    p = tName.split(VS_SPACE).map(s => s.trim()).filter(Boolean);
+    if (p.length >= 2) {
+      let d1 = p[p.length - 2].replace(/^[A-Z]+[-_\s]/i, '').trim();
+      let d2 = p[p.length - 1].trim();
+      return [norm(d1), norm(d2)];
+    }
+
+    // 3. Try " AND " separator
+    const AND_SEP = /\s+AND\s+/i;
+    p = tName.split(AND_SEP).map(s => s.trim()).filter(Boolean);
     if (p.length >= 2) return [norm(p[p.length-2]), norm(p[p.length-1])];
 
-    // 2. Try file name
-    const base = fName.replace(/\.html?$/i, '').replace(/[_\-\.]+/g, ' ').trim();
-    p = base.split(SEP).map(s => s.trim()).filter(Boolean);
+    // 4. Try "&" or "|" or "+" (but NOT "/" which appears inside Navisworks category names)
+    const SYMBOL_SEP = /\s*[&|+]\s*/;
+    p = tName.split(SYMBOL_SEP).map(s => s.trim()).filter(Boolean);
     if (p.length >= 2) return [norm(p[0]), norm(p[1])];
 
-    // 3. Fallback: split filename on underscores/dashes
-    const parts2 = fName.replace(/\.html?$/i,'').split(/[_\-+]+/);
-    if (parts2.length >= 2 && parts2[parts2.length-1].trim())
-      return [norm(parts2[0]), norm(parts2[parts2.length-1])];
+    // 5. Try file name with _vs_
+    const base = fName.replace(/\.html?$/i, '');
+    p = base.split(VS_UNDERSCORE).map(s => s.trim()).filter(Boolean);
+    if (p.length >= 2) {
+      let d1 = p[0].replace(/^[A-Z]+_/i, '').trim();
+      return [norm(d1), norm(p[1])];
+    }
+
+    // 6. Try file name with " vs "
+    p = base.replace(/[_]+/g,' ').split(VS_SPACE).map(s => s.trim()).filter(Boolean);
+    if (p.length >= 2) return [norm(p[0]), norm(p[1])];
 
     return [norm(tName), '__UNKNOWN__'];
   }
@@ -1202,7 +1303,15 @@
       approved=parseInt(summaryMatch[5])||0; resolved=parseInt(summaryMatch[6])||0;
     }
     const [d1, d2] = parseDisciplines(testName, fileName);
-    return { testName, d1, d2, total, new: newC, active, reviewed, approved, resolved };
+    const groupMatch = testName.match(/^([A-Za-z]+)_/);
+    const group = groupMatch ? groupMatch[1].toUpperCase() : '';
+    // Tolerance (first content cell) + Type / Status (last two content cells of the summary row)
+    const tolMatch = block.match(/contentCell">([^<]*)<\/td>\s*<td[^>]*contentCell">\d+<\/td>/);
+    const tsMatch  = block.match(/(?:<td[^>]*contentCell">\d+<\/td>\s*){6}<td[^>]*contentCell">([^<]*)<\/td>\s*<td[^>]*contentCell">([^<]*)<\/td>/);
+    const tolerance = tolMatch ? decodeEntities(tolMatch[1].trim()) : '';
+    const type      = tsMatch  ? decodeEntities(tsMatch[1].trim())  : '';
+    const status    = tsMatch  ? decodeEntities(tsMatch[2].trim())  : '';
+    return { testName, d1, d2, group, tolerance, type, status, total, new: newC, active, reviewed, approved, resolved };
   }
   function parseClashHTML(html, name) {
     const blocks = html.split(/(?=<table[^>]*class="testSummaryTable")/i);
@@ -1235,7 +1344,7 @@
         if (d.d2 === '__UNKNOWN__') unknownFiles.push(`"${d.testName}" (${name})`);
         else {
           parsedData.push(d);
-          [d.d1, d.d2].forEach(disc => { if (!seenDiscs.includes(disc)) seenDiscs.push(disc); });
+          [d.d1, d.d2].forEach(disc => { if (!seenDiscs.some(x => x.toUpperCase() === disc.toUpperCase())) seenDiscs.push(disc); });
         }
       });
     });
@@ -1248,7 +1357,7 @@
     updateStats();
     buildFilterBar();
     renderMatrix();
-    ['matrixSection','exportBtn','exportCsvBtn','printBtn','editBtn','modeSelector','statsBar','sortSelector','filterBar','actionBtn','viewSizeGroup'].forEach(id => {
+    ['matrixSection','exportBtn','exportOrderWrap','exportCsvBtn','printBtn','editBtn','modeSelector','statsBar','sortSelector','filterBar','actionBtn','viewSizeGroup'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.style.display = ['matrixSection','statsBar','filterBar'].includes(id) ? 'block' : 'flex';
     });
@@ -1322,11 +1431,22 @@
     return d.new + d.active;
   }
 
-  function getCell(d1, d2) {
-    const n = s => s.trim().toUpperCase();
-    return parsedData.find(d =>
+  function getPairTests(d1, d2) {
+    const n = s => String(s).trim().toUpperCase();
+    return parsedData.filter(d =>
       (n(d.d1) === n(d1) && n(d.d2) === n(d2)) || (n(d.d1) === n(d2) && n(d.d2) === n(d1))
     );
+  }
+  // One test  -> that test itself.
+  // Several tests for the same pair (e.g. H_ / M_ / L_ groups, or A-vs-B and B-vs-A) -> their SUM,
+  // so no test is dropped from the matrix. `.tests` keeps the individual tests.
+  function getCell(d1, d2) {
+    const t = getPairTests(d1, d2);
+    if (!t.length) return undefined;
+    if (t.length === 1) return t[0];
+    const agg = { testName: `${t.length} tests`, d1: t[0].d1, d2: t[0].d2, group: '', tolerance: '', type: '', status: '', tests: t };
+    ['total','new','active','reviewed','approved','resolved'].forEach(k => { agg[k] = t.reduce((a, x) => a + (x[k] || 0), 0); });
+    return agg;
   }
 
   function overrideKey(d1, d2) { const a = [d1, d2].sort(); return a[0] + '||' + a[1]; }
@@ -1355,56 +1475,34 @@
       ? `<div style="font-size:22px;font-weight:800;letter-spacing:2px;color:#0077ff;font-family:'Share Tech Mono',monospace;line-height:1;">${_roundDisp}</div>${_subLine}`
       : `<div style="font-size:11px;font-weight:800;letter-spacing:1px;color:#90a4ae;">DISCIPLINE</div>`;
     let html = `<thead><tr><th class="row-label" title="Click Round field above to set round label" style="vertical-align:middle;padding:8px 10px;">${_cornerHTML}</th>`;
-    filtDiscs.forEach((d, di) => {
+    filtDiscs.forEach((d) => {
       const color = getDiscColor(disciplines.indexOf(d));
       const dimmed = activeFilter && d !== activeFilter ? ' style="opacity:0.35"' : '';
-      html += `<th class="col-header"${dimmed}><div class="rotated-wrap"><span style="background:${color}">${d}</span></div></th>`;
+      const nm = _esc(getDiscDisplayName(d));
+      html += `<th class="col-header"${dimmed} title="${nm}"><div class="rotated-wrap"><span style="background:${color}">${nm}</span></div></th>`;
     });
     html += '</tr></thead><tbody>';
 
-    filtDiscs.forEach((r, ri) => {
-      const rowColor = getDiscColor(disciplines.indexOf(r));
-      const rowDimmed = activeFilter && r !== activeFilter ? ' style="opacity:0.35"' : '';
-      html += `<tr><td class="label-cell" style="background:${rowColor}" onclick="openDiscPanel('${r}')" title="Click for ${r} summary">${r}</td>`;
-      filtDiscs.forEach((c, ci) => {
-        const origRi = disciplines.indexOf(r);
+    // Full symmetric matrix — every pair is shown in BOTH triangles (same as the Excel "Matrix" sheet)
+    filtDiscs.forEach((r) => {
+      const origRi = disciplines.indexOf(r);
+      const rowColor = getDiscColor(origRi);
+      const nmR = _esc(getDiscDisplayName(r));
+      html += `<tr><td class="label-cell" style="background:${rowColor}" onclick="openDiscPanel(disciplines[${origRi}])" title="${nmR}">${nmR}</td>`;
+      filtDiscs.forEach((c) => {
         const origCi = disciplines.indexOf(c);
-        if (origCi < origRi) {
-          html += `<td class="cell-diag${activeFilter && r !== activeFilter && c !== activeFilter ? ' cell-dimmed' : ''}"></td>`;
-        } else if (origCi === origRi) {
-          const clash = getCell(r, c);
-          const key = overrideKey(r, c);
-          const hasOverride = cellOverrides[key] !== undefined;
-          if (!clash && !hasOverride) {
-            html += `<td class="cell-diag"></td>`;
-          } else {
-            const val = hasOverride ? cellOverrides[key] : getValue(clash, null, r, c);
-            const cls = cellClass(val);
-            const threshCls = val > thresholdValue && thresholdValue > 0 ? ' cell-thresh' : '';
-            const badge = hasOverride ? `<span style="position:absolute;top:3px;right:4px;font-size:9px;color:rgba(255,255,255,0.6)">✏</span>` : '';
-            html += `<td class="${cls}${threshCls}" style="outline:3px solid #fff;outline-offset:-3px;position:relative;"
-              data-tip="${buildTipData(clash, r, c, val, hasOverride)}"
-              onmouseenter="showTip(event,this)" onmouseleave="hideTip()">
-              ${badge}${val.toLocaleString()}</td>`;
-          }
-        } else {
-          const clash = getCell(r, c);
-          const key = overrideKey(r, c);
-          const hasOverride = cellOverrides[key] !== undefined;
-          const dimmedCell = activeFilter && r !== activeFilter && c !== activeFilter ? ' cell-dimmed' : '';
-          if (!clash && !hasOverride) {
-            html += `<td class="cell-na${dimmedCell}">–</td>`;
-          } else {
-            const val = hasOverride ? cellOverrides[key] : getValue(clash, null, r, c);
-            const cls = cellClass(val);
-            const threshCls = val > thresholdValue && thresholdValue > 0 ? ' cell-thresh' : '';
-            const badge = hasOverride ? `<span style="position:absolute;top:3px;right:4px;font-size:9px;color:rgba(255,255,255,0.6)">✏</span>` : '';
-            html += `<td class="${cls}${threshCls}${dimmedCell}" style="position:relative;"
-              data-tip="${buildTipData(clash, r, c, val, hasOverride)}"
-              onmouseenter="showTip(event,this)" onmouseleave="hideTip()">
-              ${badge}${val.toLocaleString()}</td>`;
-          }
-        }
+        const dimCell = activeFilter && r !== activeFilter && c !== activeFilter ? ' cell-dimmed' : '';
+        const clash = getCell(r, c);
+        const key = overrideKey(r, c);
+        const hasOverride = cellOverrides[key] !== undefined;
+        if (!clash && !hasOverride) { html += origCi === origRi ? `<td class="cell-diag${dimCell}"></td>` : `<td class="cell-na${dimCell}">–</td>`; return; }
+        const val = hasOverride ? cellOverrides[key] : getValue(clash, null, r, c);
+        const cls = cellClass(val);
+        const threshCls = val > thresholdValue && thresholdValue > 0 ? ' cell-thresh' : '';
+        const badge = hasOverride ? `<span style="position:absolute;top:3px;right:4px;font-size:9px;color:rgba(255,255,255,0.7)">✏</span>` : '';
+        html += `<td class="${cls}${threshCls}${dimCell}" style="position:relative;${origCi === origRi ? 'outline:3px solid #fff;outline-offset:-3px;' : ''}"
+          data-tip="${buildTipData(clash, r, c, val, hasOverride)}"
+          onmouseenter="showTip(event,this)" onmouseleave="hideTip()">${badge}${val.toLocaleString()}</td>`;
       });
       html += '</tr>';
     });
@@ -1445,7 +1543,7 @@
 
   // ── Tooltip ───────────────────────────────────────────────────────────────────
   function buildTipData(clash, r, c, val, hasOverride) {
-    const name = clash ? clash.testName : `${r} VS ${c}`;
+    const name = clash ? (clash.tests ? clash.tests.map(t => _esc(t.testName)).join('<br>') : _esc(clash.testName)) : `${r} VS ${c}`;
     if (clash) {
       return encodeURIComponent(
         `<strong style="color:var(--accent)">${name}</strong><br>` +
@@ -1513,22 +1611,10 @@
       matrixRows += `<tr><td class="row-lbl" style="background:${pColor(rIdx)}">${getDiscDisplayName(r)}</td>`;
       filtDiscs.forEach((c, ci) => {
         const cIdx = disciplines.indexOf(c);
-        if (cIdx < rIdx) { matrixRows += `<td class="diag"></td>`; return; }
-        if (cIdx === rIdx) {
-          const clash = getCell(r, c);
-          const key = overrideKey(r, c);
-          const hasOv = cellOverrides[key] !== undefined;
-          if (!clash && !hasOv) { matrixRows += `<td class="diag"></td>`; return; }
-          const val = hasOv ? cellOverrides[key] : getValue(clash, null, r, c);
-          const bg = val === 0 ? '#00C853' : val <= 10 ? '#FFD600' : val <= 50 ? '#FF6D00' : '#FF1744';
-          const fc = val > 0 && val <= 10 ? '#333' : '#fff';
-          matrixRows += `<td style="background:${bg};color:${fc};font-weight:800;outline:3px solid #fff;outline-offset:-3px">${val}</td>`;
-          return;
-        }
         const clash = getCell(r, c);
         const key = overrideKey(r, c);
         const hasOv = cellOverrides[key] !== undefined;
-        if (!clash && !hasOv) { matrixRows += `<td class="na">—</td>`; return; }
+        if (!clash && !hasOv) { matrixRows += cIdx === rIdx ? `<td class="diag"></td>` : `<td class="na">—</td>`; return; }
         const val = hasOv ? cellOverrides[key] : getValue(clash, null, r, c);
         const bg = val === 0 ? '#00C853' : val <= 10 ? '#FFD600' : val <= 50 ? '#FF6D00' : '#FF1744';
         const fc = val > 0 && val <= 10 ? '#333' : '#fff';
@@ -1767,128 +1853,109 @@ ${notesHTML}
     a.download = `${proj}_${date}.csv`; a.click();
   }
 
-  // ── Export Excel ──────────────────────────────────────────────────────────────
+  // ── Export Excel (Clash Matrix + Clash Tests report) ────────────────────────────
   function exportExcel() {
     const wb = XLSX.utils.book_new();
-    const EXCEL_DISC_COLORS = [
-      'FF1565C0','FF2E7D32','FFF9A825','FFAD1457','FF6A1B9A',
-      'FF00838F','FFE64A19','FF37474F','FF558B2F','FF0277BD',
-      'FF4527A0','FFBF360C','FF00695C','FF283593','FF827717'
-    ];
-    const getEC = i => EXCEL_DISC_COLORS[i % EXCEL_DISC_COLORS.length];
-    function cellFg(val) {
-      if (val === 0)    return 'FF00C853';
-      if (val <= 10)   return 'FFFFD600';
-      if (val <= 50)   return 'FFFF6D00';
-      return 'FFFF1744';
-    }
-    function fontColor(fg) { return fg === 'FFFFD600' ? 'FF333333' : 'FFFFFFFF'; }
-    const bdr = (color, style='medium') => ({
-      top:{style,color:{rgb:color}}, bottom:{style,color:{rgb:color}},
-      left:{style,color:{rgb:color}}, right:{style,color:{rgb:color}}
+    const NAVY  = 'FF1F3864';
+    const RED   = 'FFC00000';
+    const BLUE  = 'FF2E75B6';
+    const GRAY  = 'FF7F7F7F';
+    const ORANGE= 'FFED7D31';
+    const GREEN = 'FF548235';
+    const WHITE = 'FFFFFFFF';
+    const thin  = { style:'thin', color:{rgb:'FFBFBFBF'} };
+    const thinBorder = { top:thin, bottom:thin, left:thin, right:thin };
+    const headerStyle = (fill) => ({
+      fill: { fgColor:{rgb:fill} },
+      font: { bold:true, color:{rgb:WHITE}, sz:11, name:'Calibri' },
+      alignment: { horizontal:'center', vertical:'center', wrapText:true }
     });
-    const thinBdr = () => bdr('FFB0BEC5','thin');
 
-    // Project info sheet
-    const proj = document.getElementById('projName').value;
-    const phase = document.getElementById('projPhase').value;
     const date = new Date().toISOString().slice(0, 10);
+    const proj = document.getElementById('projName').value || 'Clash_Matrix';
 
-    const aoa = [['', ...disciplines]];
-    disciplines.forEach((r, ri) => {
-      const row = [r];
-      disciplines.forEach((c, ci) => {
-        if (ci < ri) { row.push(''); return; }
-        const key = overrideKey(r, c);
-        if (cellOverrides[key] !== undefined) { row.push(cellOverrides[key]); return; }
-        const clash = getCell(r, c);
-        if (!clash) { row.push(ci === ri ? '' : null); return; }
-        row.push(getValue(clash, currentMode, r, c));
-      });
-      aoa.push(row);
-    });
+    // Unique Item-1 (rows) and Item-2 (columns) categories, exactly as parsed —
+    // not mirrored/merged, matching how each clash test records its own pair direction.
+    const rowDiscs = [...new Set(parsedData.map(d => d.d1))]
+      .sort((a, b) => getDiscDisplayName(a).localeCompare(getDiscDisplayName(b)));
+    const colDiscs = [...new Set(parsedData.map(d => d.d2))]
+      .sort((a, b) => getDiscDisplayName(a).localeCompare(getDiscDisplayName(b)));
+    const totalCol = colDiscs.length + 1;
 
-    // Add project info rows at bottom
-    aoa.push([]);
-    if (proj)  aoa.push([`Project: ${proj}`]);
-    if (phase) aoa.push([`Phase: ${phase}`]);
-    const modeNames = { open:'New + Active', total:'Total Clashes', resolved:'Resolved' };
-    aoa.push([`Mode: ${modeNames[currentMode] || currentMode}   |   Generated by BIMZ Clash Matrix v4.0   |   ${date}`]);
-
-    const ws = XLSX.utils.aoa_to_sheet(aoa);
-    ws['!cols'] = [{ wch: 20 }, ...disciplines.map(() => ({ wch: 14 }))];
-    ws['!rows'] = [{ hpt: 56 }, ...disciplines.map(() => ({ hpt: 38 }))];
-
-    // Corner
-    const cornerAddr = XLSX.utils.encode_cell({ r:0, c:0 });
-    if (!ws[cornerAddr]) ws[cornerAddr] = { v:'', t:'s' };
-    ws[cornerAddr].s = {
-      fill: { fgColor:{rgb:'FF0A0E1A'} },
-      font: { bold:true, color:{rgb:'FF00D4FF'}, sz:11, name:'Calibri' },
-      alignment: { horizontal:'center', vertical:'center' },
-      border: bdr('FF1E2D45')
+    // ── Sheet 1: Clash Matrix ──
+    const ws1 = {};
+    const setCell = (ws, r, c, v, s, t) => {
+      const addr = XLSX.utils.encode_cell({ r, c });
+      if (v && typeof v === 'object' && 'f' in v) {
+        ws[addr] = { f: v.f, t: t || 'n' };
+      } else {
+        ws[addr] = { v, t: t || (typeof v === 'number' ? 'n' : 's') };
+      }
+      if (s) ws[addr].s = s;
+      return addr;
     };
-
-    // Column headers
-    disciplines.forEach((d, di) => {
-      const addr = XLSX.utils.encode_cell({ r:0, c:di+1 });
-      if (!ws[addr]) ws[addr] = { v:d, t:'s' };
-      ws[addr].s = {
-        fill: { fgColor:{rgb:getEC(di)} },
-        font: { bold:true, color:{rgb:'FFFFFFFF'}, sz:12, name:'Calibri' },
-        alignment: { horizontal:'center', vertical:'bottom', textRotation:90, wrapText:false },
-        border: bdr('FF0A0E1A')
-      };
+    // Corner + column headers
+    setCell(ws1, 0, 0, 'Item 1  \\  Item 2', headerStyle(NAVY));
+    colDiscs.forEach((c, ci) => {
+      setCell(ws1, 0, ci + 1, getDiscDisplayName(c), { ...headerStyle(RED), alignment:{ horizontal:'center', vertical:'center', textRotation:90, wrapText:true } });
     });
-
-    // Data cells
-    disciplines.forEach((r, ri) => {
+    setCell(ws1, 0, totalCol, 'Total', headerStyle(NAVY));
+    // Row headers + data cells
+    rowDiscs.forEach((r, ri) => {
       const excelRow = ri + 1;
-      const la = XLSX.utils.encode_cell({ r:excelRow, c:0 });
-      if (!ws[la]) ws[la] = { v:r, t:'s' };
-      ws[la].s = {
-        fill: { fgColor:{rgb:getEC(ri)} },
-        font: { bold:true, color:{rgb:'FFFFFFFF'}, sz:12, name:'Calibri' },
-        alignment: { horizontal:'left', vertical:'center', indent:1 },
-        border: bdr('FF0A0E1A')
-      };
-      disciplines.forEach((c, ci) => {
-        const addr = XLSX.utils.encode_cell({ r:excelRow, c:ci+1 });
-        if (ci < ri) {
-          if (!ws[addr]) ws[addr] = { v:'', t:'s' };
-          ws[addr].s = { fill: { fgColor:{rgb:'FFB0BEC5'} }, border: thinBdr() };
-        } else {
-          const rawVal = ws[addr] ? ws[addr].v : undefined;
-          if (rawVal === null || rawVal === undefined || rawVal === '') {
-            if (!ws[addr]) ws[addr] = { v:'–', t:'s' };
-            else { ws[addr].v = ci === ri ? '' : '–'; ws[addr].t = 's'; }
-            ws[addr].s = {
-              fill: { fgColor:{rgb:'FFCFD8DC'} },
-              font: { bold:false, color:{rgb:'FF90A4AE'}, sz:14, name:'Calibri' },
-              alignment: { horizontal:'center', vertical:'center' },
-              border: thinBdr()
-            };
-          } else {
-            const v = typeof rawVal === 'number' ? rawVal : parseInt(rawVal, 10);
-            const fg = cellFg(v);
-            const fc = fontColor(fg);
-            const hasOverride = cellOverrides[overrideKey(r,c)] !== undefined;
-            ws[addr].s = {
-              fill: { fgColor:{rgb:fg} },
-              font: { bold:true, color:{rgb:fc}, sz:16, name:'Calibri', italic: hasOverride },
-              alignment: { horizontal:'center', vertical:'center' },
-              border: ci === ri
-                ? { top:{style:'medium',color:{rgb:getEC(ri)}}, bottom:{style:'medium',color:{rgb:getEC(ri)}}, left:{style:'medium',color:{rgb:getEC(ri)}}, right:{style:'medium',color:{rgb:getEC(ri)}} }
-                : bdr('FF607D8B','thin')
-            };
-          }
-        }
+      setCell(ws1, excelRow, 0, getDiscDisplayName(r), { ...headerStyle(BLUE), alignment:{ horizontal:'left', vertical:'center', wrapText:true, indent:1 } });
+      colDiscs.forEach((c, ci) => {
+        const test = parsedData.find(d => d.d1 === r && d.d2 === c);
+        const val = test ? test.total : '';
+        setCell(ws1, excelRow, ci + 1, val, {
+          font: { sz:11, name:'Calibri' },
+          alignment: { horizontal:'center', vertical:'center' },
+          border: thinBorder
+        }, typeof val === 'number' ? 'n' : 's');
+      });
+      const firstCol = XLSX.utils.encode_col(1);
+      const lastCol  = XLSX.utils.encode_col(colDiscs.length);
+      setCell(ws1, excelRow, totalCol, { f: `SUM(${firstCol}${excelRow+1}:${lastCol}${excelRow+1})` },
+        { font:{ bold:true, sz:11, name:'Calibri' }, alignment:{ horizontal:'center', vertical:'center' }, border: thinBorder }, 'n');
+    });
+    // Total row
+    const totalRow = rowDiscs.length + 1;
+    setCell(ws1, totalRow, 0, 'Total', headerStyle(NAVY));
+    colDiscs.forEach((c, ci) => {
+      const colLetter = XLSX.utils.encode_col(ci + 1);
+      setCell(ws1, totalRow, ci + 1, { f: `SUM(${colLetter}2:${colLetter}${totalRow})` }, headerStyle(NAVY), 'n');
+    });
+    setCell(ws1, totalRow, totalCol, { f: `SUM(${XLSX.utils.encode_col(totalCol)}2:${XLSX.utils.encode_col(totalCol)}${totalRow})` }, headerStyle(NAVY), 'n');
+
+    ws1['!ref'] = XLSX.utils.encode_range({ s:{r:0,c:0}, e:{r:totalRow, c:totalCol} });
+    ws1['!cols'] = [{ wch:52 }, ...colDiscs.map(() => ({ wch:7 })), { wch:9 }];
+    ws1['!rows'] = [{ hpt:250 }];
+    XLSX.utils.book_append_sheet(wb, ws1, 'Clash Matrix');
+
+    // ── Sheet 2: Clash Tests ──
+    const headers2 = ['#','Group','Test Name (full)','Item 1 Category','Item 2 Category','Tolerance','Total Clashes','New','Active','Reviewed','Approved','Resolved','Type','Status'];
+    const headerFills = [NAVY, NAVY, NAVY, BLUE, RED, NAVY, RED, GRAY, ORANGE, BLUE, GREEN, GRAY, NAVY, NAVY];
+    const ws2 = {};
+    headers2.forEach((h, ci) => setCell(ws2, 0, ci, h, headerStyle(headerFills[ci])));
+    const leftAlignCols = [2, 3, 4]; // Test Name, Item 1, Item 2
+    parsedData.forEach((d, ri) => {
+      const excelRow = ri + 1;
+      const rowVals = [ri+1, d.group || '', d.testName, getDiscDisplayName(d.d1), getDiscDisplayName(d.d2), '', d.total, d.new, d.active, d.reviewed, d.approved, d.resolved, '', ''];
+      rowVals.forEach((v, ci) => {
+        const isNum = typeof v === 'number';
+        setCell(ws2, excelRow, ci, v, {
+          font: { bold: ci === 1, sz:11, name:'Calibri' },
+          alignment: { horizontal: leftAlignCols.includes(ci) ? 'left' : 'center', vertical:'center' },
+          border: thinBorder
+        }, isNum ? 'n' : 's');
       });
     });
+    ws2['!ref'] = XLSX.utils.encode_range({ s:{r:0,c:0}, e:{r:parsedData.length, c:headers2.length-1} });
+    ws2['!cols'] = [{wch:6},{wch:8},{wch:70},{wch:42},{wch:42},{wch:11},{wch:12},{wch:8},{wch:8},{wch:10},{wch:10},{wch:10},{wch:8},{wch:9}];
+    ws2['!rows'] = [{ hpt:32 }];
+    XLSX.utils.book_append_sheet(wb, ws2, 'Clash Tests');
 
-    const proj2 = document.getElementById('projName').value || 'Clash_Matrix';
-    XLSX.utils.book_append_sheet(wb, ws, `Clash Matrix ${date}`);
-    XLSX.writeFile(wb, `${proj2.replace(/\s+/g,'_')}_${date}.xlsx`, { bookType:'xlsx', type:'binary', cellStyles:true });
+    XLSX.writeFile(wb, `${proj.replace(/\s+/g,'_')}_${date}.xlsx`, { bookType:'xlsx', type:'binary', cellStyles:true });
   }
 
   // ── Multi-Round Compare ───────────────────────────────────────────────────────
@@ -2232,7 +2299,7 @@ ${notesHTML}
     document.getElementById('sort-file').classList.add('active');
     document.getElementById('fileList').innerHTML = '';
     document.getElementById('buildBtn').disabled = true;
-    ['exportBtn','exportCsvBtn','printBtn','editBtn','actionBtn','viewSizeGroup'].forEach(id => document.getElementById(id).style.display = 'none');
+    ['exportBtn','exportOrderWrap','exportCsvBtn','printBtn','editBtn','actionBtn','viewSizeGroup'].forEach(id => document.getElementById(id).style.display = 'none');
     ['modeSelector','matrixSection','statsBar','sortSelector','filterBar','thresholdBar'].forEach(id => document.getElementById(id).style.display = 'none');
     fileInput.value = ''; cellOverrides = {};
     closeDiscPanel(); hideMsg(); clearMatrix();
@@ -2378,6 +2445,7 @@ ${notesHTML}
     buildFilterBar();
     renderMatrix();
     document.getElementById('exportBtn').style.display    = 'flex';
+    document.getElementById('exportOrderWrap').style.display = 'flex';
     document.getElementById('exportCsvBtn').style.display = 'flex';
     document.getElementById('printBtn').style.display     = 'flex';
     document.getElementById('editBtn').style.display      = 'flex';
@@ -2464,13 +2532,7 @@ ${notesHTML}
   };
 
 
-  // ── v6: Theme Toggle ──────────────────────────────────────────────────────────
-  let _darkMode = true;
-  function toggleTheme() {
-    _darkMode = !_darkMode;
-    document.body.classList.toggle('light-mode', !_darkMode);
-    document.getElementById('themeBtn').textContent = _darkMode ? '🌙 DARK' : '☀ LIGHT';
-  }
+  // (Light mode only — theme toggle removed)
 
   // ── v6: Heat Index ────────────────────────────────────────────────────────────
   function calcHeatIndex() {
@@ -2720,8 +2782,8 @@ ${notesHTML}
     exportExcelV6();
   };
 
-  function exportExcelV6() {
-    const wb = XLSX.utils.book_new();
+  async function exportExcelV6() {
+    const wb = new ExcelJS.Workbook();
     const EXCEL_DISC_COLORS = [
       'FF1565C0','FF2E7D32','FFF9A825','FFAD1457','FF6A1B9A',
       'FF00838F','FFE64A19','FF37474F','FF558B2F','FF0277BD',
@@ -2733,100 +2795,214 @@ ${notesHTML}
       if (val <= 50) return 'FFFF6D00'; return 'FFFF1744';
     }
     function fontColor(fg) { return fg === 'FFFFD600' ? 'FF333333' : 'FFFFFFFF'; }
-    const bdr = (color, style='medium') => ({
-      top:{style,color:{rgb:color}}, bottom:{style,color:{rgb:color}},
-      left:{style,color:{rgb:color}}, right:{style,color:{rgb:color}}
-    });
-    const thinBdr = () => bdr('FFB0BEC5','thin');
+    const solid = argb => ({ type:'pattern', pattern:'solid', fgColor:{ argb } });
+    const bdr = (argb, style='medium') => {
+      const s = { style, color:{ argb } };
+      return { top:s, bottom:s, left:s, right:s };
+    };
+    const thinBdr = () => bdr('FFB0BEC5', 'thin');
     const proj = document.getElementById('projName').value;
     const phase = document.getElementById('projPhase').value;
     const date = new Date().toISOString().slice(0, 10);
 
-    // ── Sheet 1: Clash Matrix ──
-    const aoa = [['', ...disciplines]];
-    disciplines.forEach((r, ri) => {
-      const row = [getDiscDisplayName(r)];
-      disciplines.forEach((c, ci) => {
-        if (ci < ri) { row.push(''); return; }
-        const key = overrideKey(r, c);
-        if (cellOverrides[key] !== undefined) { row.push(cellOverrides[key]); return; }
-        const clash = getCell(r, c);
-        if (!clash) { row.push(ci === ri ? '' : null); return; }
-        row.push(getValue(clash, currentMode, r, c));
-      });
-      aoa.push(row);
-    });
-    aoa.push([]); if (proj) aoa.push([`Project: ${proj}`]); if (phase) aoa.push([`Phase: ${phase}`]);
-    const modeNames = { open:'New + Active', total:'Total Clashes', resolved:'Resolved', heatmap:'Heatmap (Open)' };
-    const hi = calcHeatIndex();
-    aoa.push([`Mode: ${modeNames[currentMode]||currentMode}   |   Heat Index: ${hi}/100   |   Generated by BIMZ v6.0   |   ${date}`]);
+    // ── Sheet 1: Matrix (full symmetric matrix) ──
+    const ws1 = wb.addWorksheet('Matrix');
+    const dispNames = disciplines.map(d => String(getDiscDisplayName(d)));
+    const longest = dispNames.reduce((m, n) => Math.max(m, n.length), 0);
+    // size the label column / header row so the FULL discipline names are visible
+    ws1.getColumn(1).width = Math.min(80, Math.max(20.83203125, Math.ceil(longest * 1.2) + 4));
+    // rotated header: Excel caps a row at 409pt, so very long names wrap onto extra lines -> widen the column for them
+    const CHARS_PER_LINE = 58;
+    const hdrLines = Math.max(1, Math.ceil(longest / CHARS_PER_LINE));
+    disciplines.forEach((_, i) => { ws1.getColumn(i + 2).width = Math.max(14.83203125, hdrLines * 3.4 + 4); });
+    ws1.getRow(1).height = Math.min(409, Math.max(56, Math.ceil(Math.min(longest, CHARS_PER_LINE) * 7.2) + 20));
+    disciplines.forEach((_, i) => { ws1.getRow(i + 2).height = 38; });
 
-    const ws1 = XLSX.utils.aoa_to_sheet(aoa);
-    ws1['!cols'] = [{ wch: 20 }, ...disciplines.map(() => ({ wch: 14 }))];
-    ws1['!rows'] = [{ hpt: 56 }, ...disciplines.map(() => ({ hpt: 38 }))];
-    // Style corner
-    const cornerAddr = XLSX.utils.encode_cell({ r:0, c:0 });
-    if (!ws1[cornerAddr]) ws1[cornerAddr] = { v:'', t:'s' };
-    ws1[cornerAddr].s = { fill:{fgColor:{rgb:'FF0A0E1A'}}, font:{bold:true,color:{rgb:'FF00D4FF'},sz:11,name:'Calibri'}, alignment:{horizontal:'center',vertical:'center'}, border:bdr('FF1E2D45') };
+    const corner = ws1.getCell(1, 1);
+    corner.value = '';
+    corner.fill = solid('FF0A0E1A');
+    corner.font = { bold:true, color:{ argb:'FF00D4FF' }, size:11, name:'Calibri' };
+    corner.alignment = { horizontal:'center', vertical:'middle' };
+    corner.border = bdr('FF1E2D45');
     disciplines.forEach((d, di) => {
-      const addr = XLSX.utils.encode_cell({ r:0, c:di+1 });
-      if (!ws1[addr]) ws1[addr] = { v:getDiscDisplayName(d), t:'s' };
-      ws1[addr].s = { fill:{fgColor:{rgb:getEC(di)}}, font:{bold:true,color:{rgb:'FFFFFFFF'},sz:12,name:'Calibri'}, alignment:{horizontal:'center',vertical:'bottom',textRotation:90,wrapText:false}, border:bdr('FF0A0E1A') };
+      const c = ws1.getCell(1, di + 2);
+      c.value = dispNames[di];
+      c.fill = solid(getEC(di));
+      c.font = { bold:true, color:{ argb:'FFFFFFFF' }, size:12, name:'Calibri' };
+      c.alignment = { horizontal:'center', vertical:'bottom', textRotation:90, wrapText:true };
+      c.border = bdr('FF0A0E1A');
     });
     disciplines.forEach((r, ri) => {
-      const excelRow = ri + 1;
-      const la = XLSX.utils.encode_cell({ r:excelRow, c:0 });
-      if (!ws1[la]) ws1[la] = { v:getDiscDisplayName(r), t:'s' };
-      ws1[la].s = { fill:{fgColor:{rgb:getEC(ri)}}, font:{bold:true,color:{rgb:'FFFFFFFF'},sz:12,name:'Calibri'}, alignment:{horizontal:'left',vertical:'center',indent:1}, border:bdr('FF0A0E1A') };
+      const rowNum = ri + 2;
+      const la = ws1.getCell(rowNum, 1);
+      la.value = dispNames[ri];
+      la.fill = solid(getEC(ri));
+      la.font = { bold:true, color:{ argb:'FFFFFFFF' }, size:12, name:'Calibri' };
+      la.alignment = { horizontal:'left', vertical:'middle', indent:1, wrapText:true };
+      la.border = bdr('FF0A0E1A');
       disciplines.forEach((c, ci) => {
-        const addr = XLSX.utils.encode_cell({ r:excelRow, c:ci+1 });
-        if (ci < ri) {
-          if (!ws1[addr]) ws1[addr] = { v:'', t:'s' };
-          ws1[addr].s = { fill:{fgColor:{rgb:'FFB0BEC5'}}, border:thinBdr() };
-        } else {
-          const rawVal = ws1[addr] ? ws1[addr].v : undefined;
-          if (rawVal === null || rawVal === undefined || rawVal === '') {
-            if (!ws1[addr]) ws1[addr] = { v:'–', t:'s' };
-            else { ws1[addr].v = ci === ri ? '' : '–'; ws1[addr].t = 's'; }
-            ws1[addr].s = { fill:{fgColor:{rgb:'FFCFD8DC'}}, font:{bold:false,color:{rgb:'FF90A4AE'},sz:14,name:'Calibri'}, alignment:{horizontal:'center',vertical:'center'}, border:thinBdr() };
-          } else {
-            const v = typeof rawVal === 'number' ? rawVal : parseInt(rawVal, 10);
-            const fg = cellFg(v); const fc = fontColor(fg);
-            const hasOverride = cellOverrides[overrideKey(r,c)] !== undefined;
-            ws1[addr].s = { fill:{fgColor:{rgb:fg}}, font:{bold:true,color:{rgb:fc},sz:16,name:'Calibri',italic:hasOverride}, alignment:{horizontal:'center',vertical:'center'}, border: ci===ri ? {top:{style:'medium',color:{rgb:getEC(ri)}},bottom:{style:'medium',color:{rgb:getEC(ri)}},left:{style:'medium',color:{rgb:getEC(ri)}},right:{style:'medium',color:{rgb:getEC(ri)}}} : bdr('FF607D8B','thin') };
+        const cell = ws1.getCell(rowNum, ci + 2);
+        // value for this pair (override > parsed data), identical for both triangles
+        let rawVal = null;
+        {
+          const key = overrideKey(r, c);
+          if (cellOverrides[key] !== undefined) rawVal = cellOverrides[key];
+          else {
+            const clash = getCell(r, c) || getCell(c, r);
+            rawVal = clash ? getValue(clash, currentMode, r, c) : null;
           }
+        }
+        if (rawVal === null || rawVal === undefined || rawVal === '') {
+          cell.value = ci === ri ? '' : '–';
+          cell.fill = solid('FFCFD8DC');
+          cell.font = { bold:false, color:{ argb:'FF90A4AE' }, size:14, name:'Calibri' };
+          cell.alignment = { horizontal:'center', vertical:'middle' };
+          cell.border = thinBdr();
+        } else {
+          const v = typeof rawVal === 'number' ? rawVal : parseInt(rawVal, 10);
+          const fg = cellFg(v); const fc = fontColor(fg);
+          const hasOverride = cellOverrides[overrideKey(r, c)] !== undefined;
+          cell.value = rawVal;
+          cell.fill = solid(fg);
+          cell.font = { bold:true, color:{ argb:fc }, size:16, name:'Calibri', italic:hasOverride };
+          cell.alignment = { horizontal:'center', vertical:'middle' };
+          cell.border = bdr('FF607D8B', 'thin');
         }
       });
     });
-    XLSX.utils.book_append_sheet(wb, ws1, `Matrix`);
+    let fr = disciplines.length + 2;           // blank spacer row
+    fr++;
+    if (proj)  ws1.getCell(fr++, 1).value = `Project: ${proj}`;
+    if (phase) ws1.getCell(fr++, 1).value = `Phase: ${phase}`;
+    const modeNames = { open:'New + Active', total:'Total Clashes', resolved:'Resolved', heatmap:'Heatmap (Open)' };
+    const hi = calcHeatIndex();
+    ws1.getCell(fr, 1).value = `Mode: ${modeNames[currentMode]||currentMode}   |   Heat Index: ${hi}/100   |   Generated by BIMZ v6.0   |   ${date}`;
 
-    // ── Sheet 2: Raw Data ──
-    const raw2 = [['Test Name','D1','D2','Total','New','Active','Reviewed','Approved','Resolved','New+Active','Resolution %','Note']];
-    parsedData.forEach(d => {
-      const key = overrideKey(d.d1, d.d2);
-      const note = cellNotes[key] || '';
-      const pct = d.total > 0 ? Math.round(d.resolved/d.total*100) : 0;
-      raw2.push([d.testName, getDiscDisplayName(d.d1), getDiscDisplayName(d.d2), d.total, d.new, d.active, d.reviewed, d.approved, d.resolved, d.new+d.active, pct+'%', note]);
+    // ── Sheet 2: Clash Tests (identical layout to Clash_Matrix_Report.xlsx) ──
+    const NAVY='FF1F3864', RED='FFC00000', BLUE='FF2E75B6', GRAY='FF7F7F7F', ORANGE='FFED7D31', GREEN='FF548235';
+    const ws2 = wb.addWorksheet('Clash Tests');
+    const headers2 = ['#','Group','Test Name (full)','Item 1 Category','Item 2 Category','Tolerance','Total Clashes','New','Active','Reviewed','Approved','Resolved','Type','Status'];
+    const headerFills = [NAVY, NAVY, NAVY, BLUE, RED, NAVY, RED, GRAY, ORANGE, BLUE, GREEN, GRAY, NAVY, NAVY];
+    const widths2 = [6, 8, 70, 42, 42, 11, 12, 8, 8, 10, 10, 10, 8, 9];
+    const GROUP_FILL = { L:'FFC6E0B4', M:'FFFFE699', H:'FFF8CBAD' };
+    const thin2 = { style:'thin', color:{ argb:'FFBFBFBF' } };
+    const border2 = { top:thin2, bottom:thin2, left:thin2, right:thin2 };
+    widths2.forEach((w, i) => { ws2.getColumn(i + 1).width = w; });
+    // ExcelJS treats width 9 as its built-in default and silently drops it; a no-op column font forces the explicit width to be written
+    ws2.getColumn(14).font = { name:'Calibri', size:11 };
+
+    ws2.getRow(1).height = 32;
+    headers2.forEach((h, ci) => {
+      const c = ws2.getCell(1, ci + 1);
+      c.value = h;
+      c.fill = solid(headerFills[ci]);
+      c.font = { bold:true, color:{ argb:'FFFFFFFF' }, size:11, name:'Calibri' };
+      c.alignment = { horizontal:'center', vertical:'middle', wrapText:true };
+      c.border = border2;
     });
-    const ws2 = XLSX.utils.aoa_to_sheet(raw2);
-    ws2['!cols'] = [{wch:35},{wch:14},{wch:14},{wch:10},{wch:8},{wch:10},{wch:12},{wch:12},{wch:12},{wch:14},{wch:14},{wch:30}];
-    XLSX.utils.book_append_sheet(wb, ws2, `Raw Data`);
+    const leftCols = [3, 4, 5];   // Test Name / Item 1 / Item 2 (1-based)
+    // Row order chosen in the EXCEL ORDER selector (stable sort: ties keep file order)
+    const orderMode = (document.getElementById('excelOrder') || {}).value || 'big';
+    const T = d => d.total || 0, O = d => (d.new || 0) + (d.active || 0);
+    const gRank = (d, seq) => { const i = seq.indexOf((d.group || '').toUpperCase()); return i < 0 ? seq.length : i; };
+    const byTotalDesc = (a, b) => T(b) - T(a);
+    const comparators = {
+      big:        byTotalDesc,
+      small:      (a, b) => T(a) - T(b),
+      group_hml:  (a, b) => gRank(a, ['H','M','L']) - gRank(b, ['H','M','L']) || byTotalDesc(a, b),
+      group_lmh:  (a, b) => gRank(a, ['L','M','H']) - gRank(b, ['L','M','H']) || byTotalDesc(a, b),
+      open_big:   (a, b) => O(b) - O(a) || byTotalDesc(a, b),
+      open_small: (a, b) => O(a) - O(b) || T(a) - T(b),
+      name:       (a, b) => String(a.testName).localeCompare(String(b.testName), undefined, { numeric:true, sensitivity:'base' }),
+      file:       () => 0
+    };
+    const sortedTests = [...parsedData].sort(comparators[orderMode] || byTotalDesc);
+    sortedTests.forEach((d, ri) => {
+      const rowNum = ri + 2;
+      const g = (d.group || '').toUpperCase();
+      const vals = [ri + 1, d.group || '', d.testName, getDiscDisplayName(d.d1), getDiscDisplayName(d.d2),
+                    d.tolerance || '', d.total, d.new, d.active, d.reviewed, d.approved, d.resolved,
+                    d.type || '', d.status || ''];
+      vals.forEach((v, ci) => {
+        const col = ci + 1;
+        const c = ws2.getCell(rowNum, col);
+        c.value = v;
+        c.font = { name:'Calibri', size:11, bold: col === 2 };
+        c.alignment = leftCols.includes(col)
+          ? { horizontal:'left', vertical:'middle', wrapText:true }
+          : { horizontal:'center', vertical:'middle' };
+        c.border = border2;
+        if (col === 2 && GROUP_FILL[g]) c.fill = solid(GROUP_FILL[g]);
+        if (col === 4) c.fill = solid('FFDDEBF7');
+        if (col === 5) c.fill = solid('FFFCE4D6');
+      });
+    });
+    const n2 = parsedData.length;
+    const lastRow2 = n2 + 1;
+    // TOTAL row (SUBTOTAL so it follows the active filter)
+    const totRow = lastRow2 + 1;
+    const tc = ws2.getCell(totRow, 3);
+    tc.value = 'TOTAL (visible rows → use Status bar / SUBTOTAL)';
+    tc.font = { bold:true, name:'Calibri', size:11 };
+    const sums = { G:'total', H:'new', I:'active', J:'reviewed', K:'approved', L:'resolved' };
+    Object.keys(sums).forEach(L => {
+      const c = ws2.getCell(`${L}${totRow}`);
+      c.value = { formula:`SUBTOTAL(109,${L}2:${L}${lastRow2})`, result: parsedData.reduce((s, d) => s + (d[sums[L]] || 0), 0) };
+      c.fill = solid(NAVY);
+      c.font = { bold:true, color:{ argb:'FFFFFFFF' }, name:'Calibri', size:11 };
+      c.alignment = { horizontal:'center' };
+    });
+    // Filter + freeze panes
+    ws2.autoFilter = `A1:N${lastRow2}`;
+    ws2.views = [{ state:'frozen', xSplit:3, ySplit:1, topLeftCell:'D2', activeCell:'A1' }];
+    // Conditional formatting
+    const cfFill = argb => ({ fill:{ type:'pattern', pattern:'solid', bgColor:{ argb } } });
+    ws2.addConditionalFormatting({ ref:`G2:G${lastRow2}`, rules:[{
+      type:'colorScale', priority:1,
+      cfvo:[{ type:'min' }, { type:'percentile', value:60 }, { type:'max' }],
+      color:[{ argb:'FFFFF2CC' }, { argb:'FFF4B183' }, { argb:'FFC00000' }]
+    }] });
+    [['H','FFD9D9D9'],['I','FFF8CBAD'],['J','FFBDD7EE'],['K','FFC6E0B4'],['L','FFE2EFDA']].forEach(([L, argb], i) => {
+      ws2.addConditionalFormatting({ ref:`${L}2:${L}${lastRow2}`, rules:[{
+        type:'cellIs', operator:'greaterThan', formulae:[0], priority:i + 2, style:cfFill(argb)
+      }] });
+    });
 
     // ── Sheet 3: Notes ──
     const notesKeys = Object.keys(cellNotes);
     if (notesKeys.length) {
-      const notes3 = [['Discipline Pair','Note']];
+      const ws3 = wb.addWorksheet('Notes');
+      ws3.getColumn(1).width = 30; ws3.getColumn(2).width = 60;
+      ws3.addRow(['Discipline Pair', 'Note']);
       notesKeys.forEach(k => {
         const [d1, d2] = k.split('||');
-        notes3.push([`${getDiscDisplayName(d1)} vs ${getDiscDisplayName(d2)}`, cellNotes[k]]);
+        ws3.addRow([`${getDiscDisplayName(d1)} vs ${getDiscDisplayName(d2)}`, cellNotes[k]]);
       });
-      const ws3 = XLSX.utils.aoa_to_sheet(notes3);
-      ws3['!cols'] = [{wch:30},{wch:60}];
-      XLSX.utils.book_append_sheet(wb, ws3, `Notes`);
     }
 
     const proj2 = proj || 'Clash_Matrix';
-    XLSX.writeFile(wb, `${proj2.replace(/\s+/g,'_')}_v6_${date}.xlsx`, { bookType:'xlsx', type:'binary', cellStyles:true });
+    let buf = await wb.xlsx.writeBuffer();
+    // ExcelJS does not write the hidden _FilterDatabase name that Excel expects for the Clash Tests filter
+    // (the reference file has it) — without it the filter dropdown can fail to respond. Inject it.
+    try {
+      const zip = await JSZip.loadAsync(buf);
+      let wbx = await zip.file('xl/workbook.xml').async('string');
+      if (!/_xlnm\._FilterDatabase/.test(wbx)) {
+        const idx = wb.worksheets.findIndex(w => w.name === 'Clash Tests');
+        const dn = `<definedNames><definedName name="_xlnm._FilterDatabase" localSheetId="${idx}" hidden="1">'Clash Tests'!$A$1:$N$${lastRow2}</definedName></definedNames>`;
+        wbx = /<definedNames>/.test(wbx)
+          ? wbx.replace('<definedNames>', dn.replace('</definedNames>', '').replace('<definedNames>', '<definedNames>'))
+          : wbx.replace('</sheets>', '</sheets>' + dn);
+        zip.file('xl/workbook.xml', wbx);
+        buf = await zip.generateAsync({ type:'uint8array', compression:'DEFLATE' });
+      }
+    } catch (e) { console.warn('FilterDatabase patch skipped', e); }
+    const blob = new Blob([buf], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${proj2.replace(/\s+/g,'_')}_v6_${date}.xlsx`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   }
 
   // ── v6: Patch renderMatrix for Heatmap + Drilldown + Notes badges ─────────────
@@ -3319,73 +3495,73 @@ ${notesHTML}
     renderRotatedMatrixTo(document.getElementById('matrixTableRotated') || document.getElementById('matrixTable'));
   }
 
+  function _esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  // Every parsed clash test = one row (same rows as the Excel "Clash Tests" sheet)
+  function getTestRows() {
+    const nrm = x => String(x || '').trim().toUpperCase();
+    const q = ((document.getElementById('stackedSearch') || {}).value || '').trim().toLowerCase();
+    let rows = parsedData.map((d, idx) => {
+      const rep = getPairTests(d.d1, d.d2).length === 1;     // a manual override only maps 1:1 onto a single-test pair
+      const key = overrideKey(d.d1, d.d2);
+      const hasOv = rep && cellOverrides[key] !== undefined;
+      const val = hasOv ? cellOverrides[key] : getValue(d, currentMode);
+      return { d, idx, val, hasOv };
+    });
+    if (activeFilter) rows = rows.filter(({ d }) => nrm(d.d1) === nrm(activeFilter) || nrm(d.d2) === nrm(activeFilter));
+    const all = rows.length;
+    if (q) rows = rows.filter(({ d }) => [d.testName, d.group, d.d1, d.d2, getDiscDisplayName(d.d1), getDiscDisplayName(d.d2)].join(' ').toLowerCase().includes(q));
+    rows.sort((a, b) => (b.val - a.val) || (a.idx - b.idx));
+    return { rows, all };
+  }
+
+  function _sevOf(val) {
+    return val === 0 ? { t:'CLEAR', bg:'#00C853', fc:'#fff' }
+         : val <= 10 ? { t:'LOW',    bg:'#FFD600', fc:'#333' }
+         : val <= 50 ? { t:'MEDIUM', bg:'#FF6D00', fc:'#fff' }
+         :             { t:'HIGH',   bg:'#FF1744', fc:'#fff' };
+  }
+  function _modeLabel() { return currentMode === 'total' ? 'Total' : currentMode === 'resolved' ? 'Resolved' : 'New+Active'; }
+
   function renderStackedMatrix() {
     const stackedDiv = document.getElementById('stackedView');
     if (!stackedDiv) return;
-    const filtDiscs = activeFilter
-      ? disciplines.filter(d => d === activeFilter || getCell(activeFilter, d))
-      : disciplines;
+    const { rows, all } = getTestRows();
+    const maxVal = rows.reduce((m, r) => Math.max(m, r.val), 0) || 1;
+    const GROUP_BG = { L:'#C6E0B4', M:'#FFE699', H:'#F8CBAD' };
+    const cnt = document.getElementById('stackedCount');
+    if (cnt) cnt.textContent = rows.length === all ? `${all} CLASH TESTS` : `${rows.length} OF ${all} CLASH TESTS`;
 
-    // Collect all pairs with data
-    const pairs = [];
-    filtDiscs.forEach((r, ri) => {
-      filtDiscs.forEach((c, ci) => {
-        if (ci <= ri) return;
-        const clash = getCell(r, c);
-        const key = overrideKey(r, c);
-        const hasOverride = cellOverrides[key] !== undefined;
-        if (!clash && !hasOverride) return;
-        const val = hasOverride ? cellOverrides[key] : getValue(clash, null, r, c);
-        pairs.push({ r, c, val, clash, hasOverride });
-      });
-    });
+    let html = `<div class="tests-scroll"><table class="tests-table"><thead><tr>
+      <th class="c">#</th><th class="c">GROUP</th><th>TEST NAME</th><th>ITEM 1 CATEGORY</th><th>ITEM 2 CATEGORY</th>
+      <th class="c">${_modeLabel().toUpperCase()}</th><th class="c">TOTAL</th><th class="c">NEW</th><th class="c">ACTIVE</th>
+      <th class="c">REVIEWED</th><th class="c">APPROVED</th><th class="c">RESOLVED</th><th>SEVERITY</th><th class="c">STATUS</th>
+    </tr></thead><tbody>`;
 
-    // Sort descending
-    pairs.sort((a, b) => b.val - a.val);
-    const maxVal = pairs[0]?.val || 1;
-
-    const modeLabel = currentMode === 'open' ? 'New+Active' : currentMode === 'total' ? 'Total' : currentMode === 'resolved' ? 'Resolved' : 'New+Active';
-
-    let html = `<table class="stacked-table">
-      <thead><tr>
-        <th style="width:220px">PAIR</th>
-        <th style="width:90px;text-align:center">${modeLabel.toUpperCase()}</th>
-        <th>SEVERITY BAR</th>
-        <th style="width:90px;text-align:center">STATUS</th>
-      </tr></thead><tbody>`;
-
-    pairs.forEach(({ r, c, val, clash }) => {
-      const cls = cellClass(val);
-      const bg  = cls === 'cell-zero' ? '#00C853' : cls === 'cell-low' ? '#FFD600' : cls === 'cell-medium' ? '#FF6D00' : '#FF1744';
-      const fc  = cls === 'cell-low' ? '#333' : '#fff';
+    const numCell = v => `<td class="num${v ? '' : ' zero'}">${(v || 0).toLocaleString()}</td>`;
+    rows.forEach(({ d, val, hasOv }, i) => {
+      const sev = _sevOf(val);
       const barW = Math.round((val / maxVal) * 100);
-      const rColor = getDiscColor(disciplines.indexOf(r));
-      const cColor = getDiscColor(disciplines.indexOf(c));
-      const statusLabel = val === 0 ? '✅ CLEAR' : val <= 10 ? '🟡 LOW' : val <= 50 ? '🟠 MEDIUM' : '🔴 HIGH';
-
+      const c1 = getDiscColor(disciplines.indexOf(d.d1)), c2 = getDiscColor(disciplines.indexOf(d.d2));
+      const g = d.group || '';
       html += `<tr>
-        <td>
-          <span class="st-pair">
-            <span style="background:${rColor};color:#fff;border-radius:4px;padding:2px 7px;font-size:11px;font-weight:800;margin-right:4px;">${r}</span>
-            <span style="color:#78909c;font-size:11px;">↔</span>
-            <span style="background:${cColor};color:#fff;border-radius:4px;padding:2px 7px;font-size:11px;font-weight:800;margin-left:4px;">${c}</span>
-          </span>
-        </td>
-        <td style="text-align:center">
-          <span class="st-val" style="background:${bg};color:${fc};">${val.toLocaleString()}</span>
-        </td>
-        <td>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <div class="st-bar-wrap"><div class="st-bar" style="width:${barW}%;background:${bg};"></div></div>
-            <span style="font-size:10px;color:#78909c;min-width:30px;">${barW}%</span>
-          </div>
-        </td>
-        <td style="text-align:center;font-size:12px;font-weight:700;">${statusLabel}</td>
+        <td class="c" style="color:#90a4ae;font-weight:700">${i + 1}</td>
+        <td class="c">${g ? `<span class="g-chip" style="background:${GROUP_BG[g] || '#e2e8f0'}">${_esc(g)}</span>` : ''}</td>
+        <td class="st-name">${_esc(d.testName)}</td>
+        <td><span class="t-chip" style="background:${c1}">${_esc(getDiscDisplayName(d.d1))}</span></td>
+        <td><span class="t-chip" style="background:${c2}">${_esc(getDiscDisplayName(d.d2))}</span></td>
+        <td class="c"><span class="v-chip" style="background:${sev.bg};color:${sev.fc}">${hasOv ? '✏ ' : ''}${val.toLocaleString()}</span></td>
+        ${numCell(d.total)}${numCell(d.new)}${numCell(d.active)}${numCell(d.reviewed)}${numCell(d.approved)}${numCell(d.resolved)}
+        <td><div style="display:flex;align-items:center;gap:8px"><div class="bar-wrap" style="flex:1"><div class="bar-fill" style="width:${barW}%;background:${sev.bg}"></div></div><span style="font-size:10px;color:#78909c;min-width:28px">${barW}%</span></div></td>
+        <td class="c"><span class="s-pill" style="background:${sev.bg};color:${sev.fc}">${sev.t}</span></td>
       </tr>`;
     });
-
-    if (!pairs.length) html += `<tr><td colspan="4" style="text-align:center;color:#78909c;padding:24px;">No clash data to display.</td></tr>`;
-    html += '</tbody></table>';
+    if (!rows.length) html += `<tr><td colspan="14" style="text-align:center;color:#78909c;padding:28px">No clash tests to display.</td></tr>`;
+    const sum = k => rows.reduce((a, r) => a + (r.d[k] || 0), 0);
+    if (rows.length) html += `</tbody><tfoot><tr><td colspan="5" style="text-align:right;letter-spacing:1px">TOTAL</td><td></td>
+      <td class="num">${sum('total').toLocaleString()}</td><td class="num">${sum('new').toLocaleString()}</td><td class="num">${sum('active').toLocaleString()}</td>
+      <td class="num">${sum('reviewed').toLocaleString()}</td><td class="num">${sum('approved').toLocaleString()}</td><td class="num">${sum('resolved').toLocaleString()}</td><td></td><td></td></tr></tfoot></table></div>`;
+    else html += '</tbody></table></div>';
     stackedDiv.innerHTML = html;
   }
 
@@ -3399,60 +3575,45 @@ ${notesHTML}
     const proj  = document.getElementById('projName').value  || 'ClashMatrix';
     const phase = document.getElementById('projPhase').value || '';
     const date  = new Date().toISOString().slice(0, 10);
-    const modeLabel = { open:'New + Active', total:'Total Clashes', resolved:'Resolved', heatmap:'Heatmap' }[currentMode] || currentMode;
+    const modeLabel = { open:'New + Active', total:'Total Clashes', resolved:'Resolved', heatmap:'New + Active' }[currentMode] || currentMode;
+    const { rows } = getTestRows();
 
-    const filtDiscs = activeFilter ? disciplines.filter(d => d === activeFilter || getCell(activeFilter, d)) : disciplines;
-    const pairs = [];
-    filtDiscs.forEach((r, ri) => filtDiscs.forEach((c, ci) => {
-      if (ci <= ri) return;
-      const key = overrideKey(r, c);
-      const hasOv = cellOverrides[key] !== undefined;
-      const clash = getCell(r, c);
-      if (!clash && !hasOv) return;
-      const val = hasOv ? cellOverrides[key] : getValue(clash, null, r, c);
-      pairs.push({ r: getDiscDisplayName(r), c: getDiscDisplayName(c), val,
-        total: clash?.total ?? val, new: clash?.new ?? 0, active: clash?.active ?? 0,
-        reviewed: clash?.reviewed ?? 0, approved: clash?.approved ?? 0, resolved: clash?.resolved ?? 0 });
-    }));
-    pairs.sort((a, b) => b.val - a.val);
-
-    const header = ['#', 'PAIR', 'D1', 'D2', modeLabel.toUpperCase(), 'TOTAL', 'NEW', 'ACTIVE', 'REVIEWED', 'APPROVED', 'RESOLVED', 'STATUS'];
+    const header = ['#', 'Group', 'Test Name (full)', 'Item 1 Category', 'Item 2 Category', modeLabel, 'Total Clashes', 'New', 'Active', 'Reviewed', 'Approved', 'Resolved', 'Status'];
     const aoa = [header];
-    pairs.forEach((p, i) => {
-      const status = p.val === 0 ? 'CLEAR' : p.val <= 10 ? 'LOW' : p.val <= 50 ? 'MEDIUM' : 'HIGH';
-      aoa.push([i + 1, `${p.r} ↔ ${p.c}`, p.r, p.c, p.val, p.total, p.new, p.active, p.reviewed, p.approved, p.resolved, status]);
-    });
+    rows.forEach(({ d, val }, i) => aoa.push([i + 1, d.group || '', d.testName, getDiscDisplayName(d.d1), getDiscDisplayName(d.d2), val, d.total, d.new, d.active, d.reviewed, d.approved, d.resolved, _sevOf(val).t]));
     aoa.push([]);
     if (proj)  aoa.push([`Project: ${proj}`]);
     if (phase) aoa.push([`Phase: ${phase}`]);
     aoa.push([`Mode: ${modeLabel}   |   Generated by BIMZ v6.0   |   ${date}`]);
 
     const ws = XLSX.utils.aoa_to_sheet(aoa);
-    ws['!cols'] = [{wch:5},{wch:28},{wch:12},{wch:12},{wch:14},{wch:10},{wch:8},{wch:10},{wch:12},{wch:12},{wch:12},{wch:10}];
+    ws['!cols'] = [{wch:6},{wch:8},{wch:70},{wch:42},{wch:42},{wch:14},{wch:12},{wch:8},{wch:8},{wch:10},{wch:10},{wch:10},{wch:10}];
+    ws['!rows'] = [{ hpt: 32 }];
+    ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s:{r:0,c:0}, e:{r:rows.length, c:header.length - 1} }) };
 
-    // Style header row
-    const fgMap = { CLEAR:'FF00C853', LOW:'FFFFD600', MEDIUM:'FFFF6D00', HIGH:'FFFF1744' };
+    const thin = { style:'thin', color:{ rgb:'FFBFBFBF' } };
+    const border = { top:thin, bottom:thin, left:thin, right:thin };
+    const fills = ['FF1F3864','FF1F3864','FF1F3864','FF2E75B6','FFC00000','FF1F3864','FFC00000','FF7F7F7F','FFED7D31','FF2E75B6','FF548235','FF7F7F7F','FF1F3864'];
     header.forEach((_, ci) => {
       const addr = XLSX.utils.encode_cell({ r:0, c:ci });
-      if (!ws[addr]) ws[addr] = { v: header[ci], t:'s' };
-      ws[addr].s = { fill:{fgColor:{rgb:'FF0A0E1A'}}, font:{bold:true,color:{rgb:'FF00D4FF'},sz:11,name:'Calibri'}, alignment:{horizontal:'center',vertical:'center'}, border:{top:{style:'thin',color:{rgb:'FF1E2D45'}},bottom:{style:'thin',color:{rgb:'FF1E2D45'}},left:{style:'thin',color:{rgb:'FF1E2D45'}},right:{style:'thin',color:{rgb:'FF1E2D45'}}} };
+      ws[addr].s = { fill:{fgColor:{rgb:fills[ci]}}, font:{bold:true,color:{rgb:'FFFFFFFF'},sz:11,name:'Calibri'}, alignment:{horizontal:'center',vertical:'center',wrapText:true}, border };
     });
-    // Style data rows
-    pairs.forEach((p, i) => {
-      const excelRow = i + 1;
-      const statusVal = p.val === 0 ? 'CLEAR' : p.val <= 10 ? 'LOW' : p.val <= 50 ? 'MEDIUM' : 'HIGH';
-      const fg = fgMap[statusVal];
-      const fc = statusVal === 'LOW' ? 'FF333333' : 'FFFFFFFF';
-      // Value cell colour
-      const valAddr = XLSX.utils.encode_cell({ r: excelRow, c: 4 });
-      if (ws[valAddr]) ws[valAddr].s = { fill:{fgColor:{rgb:fg}}, font:{bold:true,color:{rgb:fc},sz:14,name:'Calibri'}, alignment:{horizontal:'center',vertical:'center'} };
-      // Status cell colour
-      const stAddr = XLSX.utils.encode_cell({ r: excelRow, c: 11 });
-      if (ws[stAddr]) ws[stAddr].s = { fill:{fgColor:{rgb:fg}}, font:{bold:true,color:{rgb:fc},sz:11,name:'Calibri'}, alignment:{horizontal:'center',vertical:'center'} };
+    const fgMap = { CLEAR:'FF00C853', LOW:'FFFFD600', MEDIUM:'FFFF6D00', HIGH:'FFFF1744' };
+    rows.forEach(({ val }, i) => {
+      const r = i + 1, st = _sevOf(val).t, fg = fgMap[st], fc = st === 'LOW' ? 'FF333333' : 'FFFFFFFF';
+      for (let ci = 0; ci < header.length; ci++) {
+        const addr = XLSX.utils.encode_cell({ r, c:ci });
+        if (!ws[addr]) continue;
+        const left = ci >= 2 && ci <= 4;
+        ws[addr].s = { font:{ sz:11, name:'Calibri', bold: ci === 1 }, alignment:{ horizontal: left ? 'left' : 'center', vertical:'center', wrapText: ci === 2 }, border };
+      }
+      [5, 12].forEach(ci => {
+        const addr = XLSX.utils.encode_cell({ r, c:ci });
+        if (ws[addr]) ws[addr].s = { fill:{fgColor:{rgb:fg}}, font:{bold:true,color:{rgb:fc},sz:12,name:'Calibri'}, alignment:{horizontal:'center',vertical:'center'}, border };
+      });
     });
-
-    XLSX.utils.book_append_sheet(wb, ws, 'Stacked List');
-    XLSX.writeFile(wb, `${proj.replace(/\s+/g,'_')}_Stacked_${date}.xlsx`, { bookType:'xlsx', type:'binary', cellStyles:true });
+    XLSX.utils.book_append_sheet(wb, ws, 'Clash Tests');
+    XLSX.writeFile(wb, `${proj.replace(/\s+/g,'_')}_ClashTests_${date}.xlsx`, { bookType:'xlsx', type:'binary', cellStyles:true });
   }
 
   // ── Per-Layout Print Functions ────────────────────────────────────────────────
@@ -3469,10 +3630,10 @@ body{font-family:'Rajdhani',sans-serif;background:#fff;color:#1e293b;-webkit-pri
 .matrix-wrapper{overflow-x:auto}
 table{border-collapse:collapse;width:100%;font-family:'Rajdhani',sans-serif}
 th.row-label{background:#f0f4f8;color:#37474f;font-size:11px;letter-spacing:1px;min-width:120px;padding:8px 12px;text-align:left;border:1px solid #b0bec5}
-th.col-header{padding:0;height:100px;vertical-align:bottom;border:1px solid #b0bec5;background:#fff}
+th.col-header{padding:4px 2px;height:auto;vertical-align:bottom;border:1px solid #b0bec5;background:#fff}
 .rotated-wrap{display:flex;align-items:flex-end;justify-content:center;height:100%;padding-bottom:6px}
-.rotated-wrap span{display:inline-block;transform:rotate(-90deg);transform-origin:center center;white-space:nowrap;font-size:12px;font-weight:800;letter-spacing:1.5px;padding:3px 5px;border-radius:4px;color:#fff}
-td.label-cell{color:#fff;font-weight:800;font-size:12px;letter-spacing:1px;padding:6px 10px;text-align:left;border:1px solid #546e7a}
+.rotated-wrap span{display:inline-block;writing-mode:vertical-rl;transform:rotate(180deg);white-space:normal;word-break:break-word;max-height:240px;text-align:left;line-height:1.25;font-size:11px;font-weight:800;letter-spacing:1px;padding:6px 4px;border-radius:4px;color:#fff}
+td.label-cell{color:#fff;max-width:240px;word-break:break-word;font-weight:800;font-size:12px;letter-spacing:1px;padding:6px 10px;text-align:left;border:1px solid #546e7a}
 td{text-align:center;font-weight:700;font-size:14px;border:1px solid #b0bec5;padding:8px 6px;min-width:56px;height:46px}
 .cell-diag{background:repeating-linear-gradient(45deg,#b0bec5,#b0bec5 4px,#cfd8dc 4px,#cfd8dc 10px);-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .cell-na{background:#cfd8dc;color:#90a4ae}
@@ -3480,7 +3641,7 @@ td{text-align:center;font-weight:700;font-size:14px;border:1px solid #b0bec5;pad
 .cell-low{background:#FFD600;color:#333;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .cell-medium{background:#FF6D00;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .cell-high{background:#FF1744;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-.layout-rotated .rotated-wrap span{transform:none!important;font-size:13px!important;padding:4px 8px}
+.layout-rotated .rotated-wrap span{transform:none!important;writing-mode:horizontal-tb!important;max-height:none!important;font-size:13px!important;padding:4px 8px}
 .layout-rotated th.col-header{height:auto;vertical-align:middle;padding:8px 4px}
 .stacked-table{border-collapse:collapse;width:100%;background:#fff;border:1px solid #ccd6e0;border-radius:8px;overflow:hidden}
 .stacked-table th{background:#f0f4f8;color:#37474f;font-size:11px;font-weight:800;letter-spacing:1px;padding:10px 14px;border-bottom:2px solid #78909c;text-align:left}
@@ -3540,11 +3701,9 @@ td{text-align:center;font-weight:700;font-size:14px;border:1px solid #b0bec5;pad
       html += `<tr><td class="label-cell" style="background:${rowColor}">${getDiscDisplayName(r)}</td>`;
       filtDiscs.forEach((c, ci) => {
         const origRi = disciplines.indexOf(r), origCi = disciplines.indexOf(c);
-        if (origCi < origRi) { html += `<td class="cell-diag"></td>`; return; }
-        if (origCi === origRi) { html += `<td class="cell-diag"></td>`; return; }
         const clash = getCell(r, c); const key = overrideKey(r, c);
         const hasOv = cellOverrides[key] !== undefined;
-        if (!clash && !hasOv) { html += `<td class="cell-na">–</td>`; return; }
+        if (!clash && !hasOv) { html += origCi === origRi ? `<td class="cell-diag"></td>` : `<td class="cell-na">–</td>`; return; }
         const val = hasOv ? cellOverrides[key] : getValue(clash, null, r, c);
         const cls = cellClass(val);
         html += `<td class="${cls}">${val.toLocaleString()}</td>`;
@@ -3579,10 +3738,9 @@ td{text-align:center;font-weight:700;font-size:14px;border:1px solid #b0bec5;pad
         if (origCi < origRi) {
           html += `<td class="cell-diag"></td>`; return;
         }
-        if (origCi === origRi) { html += `<td class="cell-diag"></td>`; return; }
         const clash = getCell(r, c); const key = overrideKey(r, c);
         const hasOv = cellOverrides[key] !== undefined;
-        if (!clash && !hasOv) { html += `<td class="cell-na">–</td>`; return; }
+        if (!clash && !hasOv) { html += origCi === origRi ? `<td class="cell-diag"></td>` : `<td class="cell-na">–</td>`; return; }
         const val = hasOv ? cellOverrides[key] : getValue(clash, null, r, c);
         html += `<td class="${cellClass(val)}">${val.toLocaleString()}</td>`;
       });
@@ -3593,46 +3751,31 @@ td{text-align:center;font-weight:700;font-size:14px;border:1px solid #b0bec5;pad
   }
 
   function _buildStackedTableHTML() {
-    const filtDiscs = activeFilter ? disciplines.filter(d => d === activeFilter || getCell(activeFilter, d)) : disciplines;
-    const pairs = [];
-    filtDiscs.forEach((r, ri) => filtDiscs.forEach((c, ci) => {
-      if (ci <= ri) return;
-      const clash = getCell(r, c); const key = overrideKey(r, c);
-      const hasOv = cellOverrides[key] !== undefined;
-      if (!clash && !hasOv) return;
-      const val = hasOv ? cellOverrides[key] : getValue(clash, null, r, c);
-      pairs.push({ r, c, val });
-    }));
-    pairs.sort((a, b) => b.val - a.val);
-    const maxVal = pairs[0]?.val || 1;
-    const modeLabel = currentMode === 'open' ? 'New+Active' : currentMode === 'total' ? 'Total' : currentMode === 'resolved' ? 'Resolved' : 'New+Active';
-    let html = `<table class="stacked-table"><thead><tr><th>PAIR</th><th>${modeLabel.toUpperCase()}</th><th>SEVERITY BAR</th><th>STATUS</th></tr></thead><tbody>`;
-    pairs.forEach(({ r, c, val }) => {
-      const cls = cellClass(val);
-      const bg = cls==='cell-zero'?'#00C853':cls==='cell-low'?'#FFD600':cls==='cell-medium'?'#FF6D00':'#FF1744';
-      const fc = cls==='cell-low'?'#333':'#fff';
-      const barW = Math.round((val / maxVal) * 100);
-      const rColor = getDiscColor(disciplines.indexOf(r)), cColor = getDiscColor(disciplines.indexOf(c));
-      const statusLabel = val===0?'✅ CLEAR':val<=10?'🟡 LOW':val<=50?'🟠 MEDIUM':'🔴 HIGH';
-      html += `<tr>
-        <td><span style="background:${rColor};color:#fff;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:800;margin-right:3px">${getDiscDisplayName(r)}</span>
-        <span style="color:#78909c;font-size:11px">↔</span>
-        <span style="background:${cColor};color:#fff;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:800;margin-left:3px">${getDiscDisplayName(c)}</span></td>
-        <td style="text-align:center"><span class="st-val" style="background:${bg};color:${fc}">${val.toLocaleString()}</span></td>
-        <td><div style="display:flex;align-items:center;gap:6px">
-          <div class="st-bar-wrap" style="width:120px"><div class="st-bar" style="width:${barW}%;background:${bg};height:8px;border-radius:4px;-webkit-print-color-adjust:exact;print-color-adjust:exact"></div></div>
-          <span style="font-size:10px;color:#78909c">${barW}%</span></div></td>
-        <td style="text-align:center;font-size:12px;font-weight:700">${statusLabel}</td>
-      </tr>`;
+    const { rows } = getTestRows();
+    const GROUP_BG = { L:'#C6E0B4', M:'#FFE699', H:'#F8CBAD' };
+    const sum = k => rows.reduce((a, r) => a + (r.d[k] || 0), 0);
+    let html = `<style>.stacked-table td,.stacked-table th{padding:6px 8px!important;font-size:11px!important}.stacked-table td.n{text-align:center;font-family:'Share Tech Mono',monospace;font-weight:700}.stacked-table tr{page-break-inside:avoid}</style>
+      <table class="stacked-table"><thead><tr><th>#</th><th>GRP</th><th>TEST NAME</th><th>ITEM 1</th><th>ITEM 2</th><th style="text-align:center">${_modeLabel().toUpperCase()}</th><th style="text-align:center">TOTAL</th><th style="text-align:center">NEW</th><th style="text-align:center">ACTIVE</th><th style="text-align:center">RESOLVED</th><th style="text-align:center">STATUS</th></tr></thead><tbody>`;
+    rows.forEach(({ d, val }, i) => {
+      const sev = _sevOf(val), g = d.group || '';
+      html += `<tr><td>${i + 1}</td>
+        <td style="text-align:center">${g ? `<span style="background:${GROUP_BG[g] || '#e2e8f0'};border-radius:4px;padding:1px 7px;font-weight:800;-webkit-print-color-adjust:exact;print-color-adjust:exact">${_esc(g)}</span>` : ''}</td>
+        <td style="word-break:break-word;font-weight:600">${_esc(d.testName)}</td>
+        <td style="word-break:break-word">${_esc(getDiscDisplayName(d.d1))}</td>
+        <td style="word-break:break-word">${_esc(getDiscDisplayName(d.d2))}</td>
+        <td style="text-align:center"><span class="st-val" style="background:${sev.bg};color:${sev.fc}">${val.toLocaleString()}</span></td>
+        <td class="n">${(d.total||0).toLocaleString()}</td><td class="n">${d.new||0}</td><td class="n">${d.active||0}</td><td class="n">${d.resolved||0}</td>
+        <td style="text-align:center;font-weight:800;color:${sev.bg === '#FFD600' ? '#b38f00' : sev.bg}">${sev.t}</td></tr>`;
     });
-    if (!pairs.length) html += `<tr><td colspan="4" style="text-align:center;color:#78909c;padding:20px">No data.</td></tr>`;
+    if (!rows.length) html += `<tr><td colspan="11" style="text-align:center;color:#78909c;padding:20px">No data.</td></tr>`;
+    else html += `<tr style="background:#f0f4f8;font-weight:800"><td colspan="6" style="text-align:right">TOTAL</td><td class="n">${sum('total').toLocaleString()}</td><td class="n">${sum('new')}</td><td class="n">${sum('active')}</td><td class="n">${sum('resolved')}</td><td></td></tr>`;
     html += '</tbody></table>';
     return html;
   }
 
   function printLayoutTriangle() {
     const win = window.open('', '_blank', 'width=1200,height=900');
-    win.document.write(_buildPrintShell('⊞ TRIANGLE VIEW', _buildTriangleTableHTML(), false));
+    win.document.write(_buildPrintShell('⊞ MATRIX VIEW', _buildTriangleTableHTML(), false));
     win.document.close();
   }
   function printLayoutRotated() {
@@ -3679,7 +3822,7 @@ td{text-align:center;font-weight:700;font-size:14px;border:1px solid #b0bec5;pad
 .page-break{page-break-after:always;margin-bottom:0}
 @media print{body{padding:16px}@page{margin:1cm}}
 </style></head><body>
-<div class="page-break">${header('⊞ TRIANGLE VIEW')}<div class="matrix-wrapper">${triHTML}</div>${legend}</div>
+<div class="page-break">${header('⊞ MATRIX VIEW')}<div class="matrix-wrapper">${triHTML}</div>${legend}</div>
 <div class="page-break">${header('⊟ ROTATED VIEW')}<div class="matrix-wrapper">${rotHTML}</div>${legend}</div>
 <div>${header('☰ STACKED LIST VIEW')}<div class="matrix-wrapper">${stHTML}</div></div>
 <script>window.onload=()=>window.print()<\/script></body></html>`;
