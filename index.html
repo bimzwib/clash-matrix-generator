@@ -2881,15 +2881,15 @@ ${notesHTML}
     // ── Sheet 2: Clash Tests (identical layout to Clash_Matrix_Report.xlsx) ──
     const NAVY='FF1F3864', RED='FFC00000', BLUE='FF2E75B6', GRAY='FF7F7F7F', ORANGE='FFED7D31', GREEN='FF548235';
     const ws2 = wb.addWorksheet('Clash Tests');
-    const headers2 = ['#','Group','Test Name (full)','Item 1 Category','Item 2 Category','Tolerance','Total Clashes','New','Active','Reviewed','Approved','Resolved','Type','Status'];
-    const headerFills = [NAVY, NAVY, NAVY, BLUE, RED, NAVY, RED, GRAY, ORANGE, BLUE, GREEN, GRAY, NAVY, NAVY];
-    const widths2 = [6, 8, 70, 42, 42, 11, 12, 8, 8, 10, 10, 10, 8, 9];
+    const headers2 = ['#','Group','Test Name (full)','Item 1 Category','Item 2 Category','Tolerance','New + Active','New','Active','Reviewed','Approved','Resolved','Total Clashes','Type','Status'];
+    const headerFills = [NAVY, NAVY, NAVY, BLUE, RED, NAVY, 'FFC55A11', GRAY, ORANGE, BLUE, GREEN, GRAY, RED, NAVY, NAVY];
+    const widths2 = [6, 8, 70, 42, 42, 11, 13, 8, 8, 10, 10, 10, 12, 8, 9];
     const GROUP_FILL = { L:'FFC6E0B4', M:'FFFFE699', H:'FFF8CBAD' };
     const thin2 = { style:'thin', color:{ argb:'FFBFBFBF' } };
     const border2 = { top:thin2, bottom:thin2, left:thin2, right:thin2 };
     widths2.forEach((w, i) => { ws2.getColumn(i + 1).width = w; });
     // ExcelJS treats width 9 as its built-in default and silently drops it; a no-op column font forces the explicit width to be written
-    ws2.getColumn(14).font = { name:'Calibri', size:11 };
+    ws2.getColumn(15).font = { name:'Calibri', size:11 };
 
     ws2.getRow(1).height = 32;
     headers2.forEach((h, ci) => {
@@ -2921,7 +2921,9 @@ ${notesHTML}
       const rowNum = ri + 2;
       const g = (d.group || '').toUpperCase();
       const vals = [ri + 1, d.group || '', d.testName, getDiscDisplayName(d.d1), getDiscDisplayName(d.d2),
-                    d.tolerance || '', d.total, d.new, d.active, d.reviewed, d.approved, d.resolved,
+                    d.tolerance || '',
+                    { formula:`H${rowNum}+I${rowNum}`, result:(d.new || 0) + (d.active || 0) },
+                    d.new, d.active, d.reviewed, d.approved, d.resolved, d.total,
                     d.type || '', d.status || ''];
       vals.forEach((v, ci) => {
         const col = ci + 1;
@@ -2944,25 +2946,25 @@ ${notesHTML}
     const tc = ws2.getCell(totRow, 3);
     tc.value = 'TOTAL (visible rows → use Status bar / SUBTOTAL)';
     tc.font = { bold:true, name:'Calibri', size:11 };
-    const sums = { G:'total', H:'new', I:'active', J:'reviewed', K:'approved', L:'resolved' };
+    const sums = { G:'open', H:'new', I:'active', J:'reviewed', K:'approved', L:'resolved', M:'total' };
     Object.keys(sums).forEach(L => {
       const c = ws2.getCell(`${L}${totRow}`);
-      c.value = { formula:`SUBTOTAL(109,${L}2:${L}${lastRow2})`, result: parsedData.reduce((s, d) => s + (d[sums[L]] || 0), 0) };
+      c.value = { formula:`SUBTOTAL(109,${L}2:${L}${lastRow2})`, result: parsedData.reduce((s, d) => s + (sums[L] === 'open' ? (d.new || 0) + (d.active || 0) : (d[sums[L]] || 0)), 0) };
       c.fill = solid(NAVY);
       c.font = { bold:true, color:{ argb:'FFFFFFFF' }, name:'Calibri', size:11 };
       c.alignment = { horizontal:'center' };
     });
     // Filter + freeze panes
-    ws2.autoFilter = `A1:N${lastRow2}`;
+    ws2.autoFilter = `A1:O${lastRow2}`;
     ws2.views = [{ state:'frozen', xSplit:3, ySplit:1, topLeftCell:'D2', activeCell:'A1' }];
     // Conditional formatting
     const cfFill = argb => ({ fill:{ type:'pattern', pattern:'solid', bgColor:{ argb } } });
-    ws2.addConditionalFormatting({ ref:`G2:G${lastRow2}`, rules:[{
+    ws2.addConditionalFormatting({ ref:`M2:M${lastRow2}`, rules:[{
       type:'colorScale', priority:1,
       cfvo:[{ type:'min' }, { type:'percentile', value:60 }, { type:'max' }],
       color:[{ argb:'FFFFF2CC' }, { argb:'FFF4B183' }, { argb:'FFC00000' }]
     }] });
-    [['H','FFD9D9D9'],['I','FFF8CBAD'],['J','FFBDD7EE'],['K','FFC6E0B4'],['L','FFE2EFDA']].forEach(([L, argb], i) => {
+    [['G','FFF4B183'],['H','FFD9D9D9'],['I','FFF8CBAD'],['J','FFBDD7EE'],['K','FFC6E0B4'],['L','FFE2EFDA']].forEach(([L, argb], i) => {
       ws2.addConditionalFormatting({ ref:`${L}2:${L}${lastRow2}`, rules:[{
         type:'cellIs', operator:'greaterThan', formulae:[0], priority:i + 2, style:cfFill(argb)
       }] });
@@ -2989,7 +2991,7 @@ ${notesHTML}
       let wbx = await zip.file('xl/workbook.xml').async('string');
       if (!/_xlnm\._FilterDatabase/.test(wbx)) {
         const idx = wb.worksheets.findIndex(w => w.name === 'Clash Tests');
-        const dn = `<definedNames><definedName name="_xlnm._FilterDatabase" localSheetId="${idx}" hidden="1">'Clash Tests'!$A$1:$N$${lastRow2}</definedName></definedNames>`;
+        const dn = `<definedNames><definedName name="_xlnm._FilterDatabase" localSheetId="${idx}" hidden="1">'Clash Tests'!$A$1:$O$${lastRow2}</definedName></definedNames>`;
         wbx = /<definedNames>/.test(wbx)
           ? wbx.replace('<definedNames>', dn.replace('</definedNames>', '').replace('<definedNames>', '<definedNames>'))
           : wbx.replace('</sheets>', '</sheets>' + dn);
