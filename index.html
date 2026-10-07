@@ -2806,6 +2806,9 @@ ${notesHTML}
     const date = new Date().toISOString().slice(0, 10);
 
     // ── Sheet 1: Matrix (full symmetric matrix) ──
+    const wsDM = wb.addWorksheet('Dept Matrix', { properties:{ tabColor:{ argb:'FFFF7A00' } } });
+    const wsCT = wb.addWorksheet('Clash Tests');
+    const wsCM = wb.addWorksheet('Clash Matrix', { properties:{ tabColor:{ argb:'FFFF7A00' } } });
     const ws1 = wb.addWorksheet('Matrix');
     const dispNames = disciplines.map(d => String(getDiscDisplayName(d)));
     const longest = dispNames.reduce((m, n) => Math.max(m, n.length), 0);
@@ -2880,7 +2883,7 @@ ${notesHTML}
 
     // ── Sheet 2: Clash Tests (identical layout to Clash_Matrix_Report.xlsx) ──
     const NAVY='FF1F3864', RED='FFC00000', BLUE='FF2E75B6', GRAY='FF7F7F7F', ORANGE='FFED7D31', GREEN='FF548235';
-    const ws2 = wb.addWorksheet('Clash Tests');
+    const ws2 = wsCT;
     const headers2 = ['#','Group','Test Name (full)','Item 1 Category','Item 2 Category','Tolerance','New + Active','New','Active','Reviewed','Approved','Resolved','Total Clashes','Type','Status'];
     const headerFills = [NAVY, NAVY, NAVY, BLUE, RED, NAVY, 'FFC55A11', GRAY, ORANGE, BLUE, GREEN, GRAY, RED, NAVY, NAVY];
     const widths2 = [6, 8, 70, 42, 42, 11, 13, 8, 8, 10, 10, 10, 12, 8, 9];
@@ -2970,6 +2973,175 @@ ${notesHTML}
       }] });
     });
 
+
+    // ── Split layout (same as Clash_Matrix_*_Split.xlsx): Dept Matrix, Clash Matrix, per-department sheets, Summary ──
+    const fdbList = [{ name:'Clash Tests', last:lastRow2 }];
+    const METRICS = ['New + Active','New','Active','Reviewed','Approved','Resolved','Total Clashes'];
+    const MKEY = { New:'new', Active:'active', Reviewed:'reviewed', Approved:'approved', Resolved:'resolved', 'Total Clashes':'total' };
+    const mv = (d, k) => k === 'New + Active' ? (d.new || 0) + (d.active || 0) : (d[MKEY[k]] || 0);
+    const PAL = ['1F6FC4','2E7D32','F5A623','AD1457','6A1B9A','008FAB','E64A19','37474F','558B2F','0277BD','4527A0','BF360C','00695C','283593','827717','C62828','4E342E','00796B','7B1FA2','455A64'].map(x => 'FF' + x);
+    const DK = 'FF0B1020', NFMT = '#,##0;\\-#,##0;\\-';
+    const IDX = `INDEX('Clash Tests'!$G$2:$M$${lastRow2},0,MATCH($B$1,'Clash Tests'!$G$1:$M$1,0))`;
+    const dn1 = t => getDiscDisplayName(t.d1), dn2 = t => getDiscDisplayName(t.d2);
+    const deptOf = nm => { const s = String(nm), i = s.indexOf('-'); return i > 0 ? s.slice(0, i) : 'ST'; };
+    const font = (o) => Object.assign({ name:'Calibri' }, o);
+    const heat = (ws, ref, mid, hi) => {
+      const f = (bg, fc) => { const o = { fill:{ type:'pattern', pattern:'solid', bgColor:{ argb:bg } } }; if (fc) o.font = { color:{ argb:fc } }; return o; };
+      [['equal',[0],'FFD0D7DC','FF8A98A3'],['greaterThanOrEqual',[hi],'FFFF1F5F','FFFFFFFF'],['between',[mid, hi - 0.001],'FFFF7A00','FFFFFFFF'],['between',[0.001, mid - 0.001],'FFFFD400',null]]
+        .forEach(([op, fm, bg, fc], i) => ws.addConditionalFormatting({ ref, rules:[{ type:'cellIs', operator:op, formulae:fm, priority:i + 2, style:f(bg, fc) }] }));
+    };
+    const topBar = (ws, mergeTo, note) => {
+      ws.getRow(1).height = 21.75;
+      const a = ws.getCell('A1'); a.value = 'Metric ▶'; a.fill = solid(DK);
+      a.font = font({ bold:true, color:{ argb:'FFFFFFFF' }, size:11 }); a.alignment = { horizontal:'right', vertical:'middle' };
+      ws.mergeCells(`B1:${mergeTo}1`);
+      const b = ws.getCell('B1'); b.value = 'New + Active'; b.fill = solid('FFFFE699');
+      b.font = font({ bold:true, size:12 }); b.alignment = { horizontal:'center', vertical:'middle' };
+      b.dataValidation = { type:'list', allowBlank:false, formulae:['"' + METRICS.join(',') + '"'] };
+      const n = ws.getCell('A2'); n.value = note; n.font = font({ size:9 });
+    };
+    const legend = (ws, r0, rows) => {
+      ws.getCell(r0, 1).value = 'Legend:'; ws.getCell(r0, 1).font = font({ bold:true, size:11 });
+      rows.forEach(([t, bg, fc], i) => { const c = ws.getCell(r0 + 1 + i, 1); c.value = t; c.fill = solid(bg); c.font = font({ bold:true, size:11, color:{ argb:fc } }); });
+    };
+    const box = () => { const t = { style:'thin', color:{ argb:'FF9AA7B0' } }; return { top:t, bottom:t, left:t, right:t }; };
+
+    // ── Dept Matrix ──
+    const DEPTS = [['ME','ME – Mechanical (HVAC)','FF2E7D32'],['DR','DR – Drainage','FF827717'],['ST','ST – Structure / Architecture','FF4E342E'],['EL','EL – Electrical','FFF5A623'],['FS','FS – Fire Suppression','FFC62828'],['SP','SP – Sanitary / Plumbing','FF6A1B9A'],['IT','IT – Low Current / IT','FFAD1457'],['WS','WS – Water Supply','FF008FAB']];
+    sortedTests.forEach(t => [deptOf(dn1(t)), deptOf(dn2(t))].forEach(c => { if (!DEPTS.some(x => x[0] === c)) DEPTS.push([c, c, PAL[DEPTS.length % PAL.length]]); }));
+    {
+      const ws = wsDM, nD = DEPTS.length;
+      topBar(ws, 'D', 'Department vs Department. Diagonal = clashes inside the same department. Dropdown in B1 changes the metric.');
+      ws.getColumn(1).width = 34; for (let i = 2; i <= nD + 2; i++) ws.getColumn(i).width = 12; ws.getColumn(nD + 2).width = 13; ws.getColumn(15).width = 14;
+      ws.getRow(4).height = 48;
+      const dp = sortedTests.map(t => [deptOf(dn1(t)), deptOf(dn2(t)), mv(t, 'New + Active')]);
+      DEPTS.forEach(([code, , color], i) => {
+        const h = ws.getCell(4, i + 2); h.value = code; h.fill = solid(color); h.font = font({ bold:true, size:13, color:{ argb:'FFFFFFFF' } });
+        h.alignment = { horizontal:'center', vertical:'middle' }; h.border = box();
+      });
+      const tc = ws.getCell(4, nD + 2); tc.value = 'TOTAL'; tc.fill = solid(DK); tc.font = font({ bold:true, size:12, color:{ argb:'FFFFFFFF' } }); tc.alignment = { horizontal:'center', vertical:'middle' }; tc.border = box();
+      const sif = (a, b) => `SUMIFS(${IDX},$O$2:$O$${lastRow2},${a},$P$2:$P$${lastRow2},${b})`;
+      DEPTS.forEach(([R, label, color], ri) => {
+        const row = ri + 5; ws.getRow(row).height = 33.75;
+        const l = ws.getCell(row, 1); l.value = label; l.fill = solid(color); l.font = font({ bold:true, size:11, color:{ argb:'FFFFFFFF' } }); l.alignment = { vertical:'middle' }; l.border = box();
+        let rowSum = 0;
+        DEPTS.forEach(([C], ci) => {
+          const L = ws.getColumn(ci + 2).letter;
+          const v = dp.reduce((s, [x, y, n]) => s + (x === R && y === C ? n : 0) + (R !== C && x === C && y === R ? n : 0), 0); rowSum += v;
+          const f = R === C ? sif(`"${R}"`, `${L}$4`) : sif(`"${R}"`, `${L}$4`) + '+' + sif(`${L}$4`, `"${R}"`);
+          const c = ws.getCell(row, ci + 2); c.value = { formula:f, result:v }; c.font = font({ bold:true, size:12, color:{ argb:'FF333333' } });
+          c.alignment = { horizontal:'center', vertical:'middle' }; c.border = box(); c.numFmt = NFMT;
+        });
+        const T = ws.getCell(row, nD + 2); T.value = { formula:`SUM(B${row}:${ws.getColumn(nD + 1).letter}${row})`, result:rowSum };
+        T.fill = solid(DK); T.font = font({ bold:true, size:12, color:{ argb:'FFFFFFFF' } }); T.alignment = { horizontal:'center', vertical:'middle' }; T.border = box(); T.numFmt = '#,##0';
+      });
+      // helper columns O / P (department of Item 1 / Item 2)
+      [['O1','Helper: Dept 1','D'],['P1','Helper: Dept 2','E']].forEach(([ref, t]) => { const c = ws.getCell(ref); c.value = t; c.font = font({ bold:true, size:9, color:{ argb:'FF7F7F7F' } }); });
+      sortedTests.forEach((t, i) => {
+        const r = i + 2;
+        [['O','D',dp[i][0]],['P','E',dp[i][1]]].forEach(([col, src, res]) => {
+          const c = ws.getCell(`${col}${r}`); c.value = { formula:`IFERROR(LEFT('Clash Tests'!${src}${r},FIND("-",'Clash Tests'!${src}${r})-1),"ST")`, result:res }; c.font = font({ size:9, color:{ argb:'FF7F7F7F' } });
+        });
+      });
+      const lastC = ws.getColumn(nD + 1).letter;
+      heat(ws, `B5:${lastC}${nD + 4}`, 100, 500);
+      legend(ws, nD + 6, [['1 – 99','FFFFD400','FF333333'],['100 – 499','FFFF7A00','FFFFFFFF'],['500 +','FFFF1F5F','FFFFFFFF'],['0','FFD0D7DC','FF8A98A3']]);
+      ws.getCell(nD + 11, 1).value = 'TOTAL = sum of the row (a clash between two departments appears in both rows).'; ws.getCell(nD + 11, 1).font = font({ size:9 });
+      ws.views = [{ state:'frozen', xSplit:1, ySplit:4, topLeftCell:'B5', activeCell:'B5', showGridLines:false }];
+    }
+
+    // ── Clash Matrix (category vs category, driven by the B1 dropdown) ──
+    {
+      const ws = wsCM;
+      const tot = {}; sortedTests.forEach(t => [dn1(t), dn2(t)].forEach(n => { tot[n] = (tot[n] || 0) + mv(t, 'Total Clashes'); }));
+      const cats = disciplines.map(d => String(getDiscDisplayName(d))).sort((a, b) => (tot[b] || 0) - (tot[a] || 0));
+      const pair = {}; sortedTests.forEach(t => { const k = dn1(t) + '||' + dn2(t); pair[k] = (pair[k] || 0) + mv(t, 'New + Active'); });
+      topBar(ws, 'F', 'Pick the metric from the dropdown (B1). Value = clashes between the row category and the column category (both directions).');
+      ws.getColumn(1).width = 46; cats.forEach((_, i) => { ws.getColumn(i + 2).width = 7.42578125; });
+      ws.getRow(4).height = 210;
+      const a4 = ws.getCell(4, 1); a4.fill = solid(DK);
+      const rng = col => `'Clash Tests'!$${col}$2:$${col}$${lastRow2}`;
+      const sf = (a, b) => `SUMIFS(${IDX},${rng('D')},${a},${rng('E')},${b})`;
+      cats.forEach((n, i) => {
+        const h = ws.getCell(4, i + 2); h.value = n; h.fill = solid(PAL[i % PAL.length]); h.font = font({ bold:true, size:10, color:{ argb:'FFFFFFFF' } });
+        h.alignment = { horizontal:'center', textRotation:90, wrapText:true }; h.border = box();
+      });
+      cats.forEach((r, ri) => {
+        const row = ri + 5; ws.getRow(row).height = 21.75;
+        const l = ws.getCell(row, 1); l.value = r; l.fill = solid(PAL[ri % PAL.length]); l.font = font({ bold:true, size:10, color:{ argb:'FFFFFFFF' } }); l.alignment = { vertical:'middle' }; l.border = box();
+        cats.forEach((c, ci) => {
+          const L = ws.getColumn(ci + 2).letter;
+          const v = (pair[r + '||' + c] || 0) + (r === c ? 0 : (pair[c + '||' + r] || 0));
+          const f = `IF($A${row}=${L}$4,${sf(`$A${row}`, `${L}$4`)},${sf(`$A${row}`, `${L}$4`)}+${sf(`${L}$4`, `$A${row}`)})`;
+          const cell = ws.getCell(row, ci + 2); cell.value = { formula:f, result:v }; cell.font = font({ bold:true, size:11, color:{ argb:'FF333333' } });
+          cell.alignment = { horizontal:'center', vertical:'middle' }; cell.border = box(); cell.numFmt = NFMT;
+        });
+      });
+      heat(ws, `B5:${ws.getColumn(cats.length + 1).letter}${cats.length + 4}`, 10, 50);
+      legend(ws, cats.length + 6, [['1 – 9','FFFFD400','FF333333'],['10 – 49','FFFF7A00','FFFFFFFF'],['50 +','FFFF1F5F','FFFFFFFF'],['0','FFD0D7DC','FF8A98A3']]);
+      ws.views = [{ state:'frozen', xSplit:1, ySplit:4, topLeftCell:'B5', activeCell:'B5', showGridLines:false }];
+    }
+
+    // ── One sheet per department (by Item 1), original "#" kept ──
+    const fillTestSheet = (ws, rows) => {
+      widths2.forEach((w, i) => { ws.getColumn(i + 1).width = w; }); ws.getColumn(15).font = { name:'Calibri', size:11 };
+      ws.getRow(1).height = 32;
+      headers2.forEach((h, ci) => { const c = ws.getCell(1, ci + 1); c.value = h; c.fill = solid(headerFills[ci]); c.font = font({ bold:true, color:{ argb:'FFFFFFFF' }, size:11 }); c.alignment = { horizontal:'center', vertical:'middle', wrapText:true }; c.border = border2; });
+      rows.forEach(({ d, idx }, ri) => {
+        const r = ri + 2, g = (d.group || '').toUpperCase();
+        [idx, d.group || '', d.testName, dn1(d), dn2(d), d.tolerance || '', { formula:`H${r}+I${r}`, result:(d.new || 0) + (d.active || 0) }, d.new, d.active, d.reviewed, d.approved, d.resolved, d.total, d.type || '', d.status || ''].forEach((v, ci) => {
+          const col = ci + 1, c = ws.getCell(r, col); c.value = v; c.font = font({ size:11, bold:col === 2 });
+          c.alignment = leftCols.includes(col) ? { horizontal:'left', vertical:'middle', wrapText:true } : { horizontal:'center', vertical:'middle' }; c.border = border2;
+          if (col === 2 && GROUP_FILL[g]) c.fill = solid(GROUP_FILL[g]); if (col === 4) c.fill = solid('FFDDEBF7'); if (col === 5) c.fill = solid('FFFCE4D6');
+        });
+      });
+      const last = rows.length + 1, tr = last + 1;
+      const tl = ws.getCell(tr, 3); tl.value = `TOTAL (${rows.length} tests)`; tl.font = font({ bold:true, size:11 });
+      Object.entries(sums).forEach(([L, k]) => {
+        const c = ws.getCell(`${L}${tr}`); c.value = { formula:`SUBTOTAL(109,${L}2:${L}${last})`, result:rows.reduce((s, { d }) => s + (k === 'open' ? (d.new || 0) + (d.active || 0) : (d[k] || 0)), 0) };
+        c.fill = solid(NAVY); c.font = font({ bold:true, color:{ argb:'FFFFFFFF' }, size:11 }); c.alignment = { horizontal:'center' };
+      });
+      ws.autoFilter = `A1:O${last}`; ws.views = [{ state:'frozen', xSplit:3, ySplit:1, topLeftCell:'D2', activeCell:'A1' }];
+      ws.addConditionalFormatting({ ref:`M2:M${last}`, rules:[{ type:'colorScale', priority:2, cfvo:[{ type:'min' }, { type:'percentile', value:60 }, { type:'max' }], color:[{ argb:'FFFFF2CC' }, { argb:'FFF4B183' }, { argb:'FFC00000' }] }] });
+      [['G','FFF4B183'],['H','FFD9D9D9'],['I','FFF8CBAD'],['J','FFBDD7EE'],['K','FFC6E0B4'],['L','FFE2EFDA']].forEach(([L, argb], i) => ws.addConditionalFormatting({ ref:`${L}2:${L}${last}`, rules:[{ type:'cellIs', operator:'greaterThan', formulae:[0], priority:i + 3, style:cfFill(argb) }] }));
+      ws.properties.tabColor = { argb:NAVY }; fdbList.push({ name:ws.name, last });
+      return { last, tr };
+    };
+    const ORDER = ['IT','EL','SP','FS','DR','ME','WS'];
+    const byDept = {}; sortedTests.forEach((d, i) => { (byDept[deptOf(dn1(d))] = byDept[deptOf(dn1(d))] || []).push({ d, idx:i + 1 }); });
+    const deptCodes = [...ORDER.filter(c => byDept[c]), ...Object.keys(byDept).filter(c => !ORDER.includes(c))];
+    const info = deptCodes.map(c => ({ c, rows:byDept[c], ...fillTestSheet(wb.addWorksheet(c), byDept[c]) }));
+
+    // ── Summary ──
+    {
+      const ws = wb.addWorksheet('Summary', { properties:{ tabColor:{ argb:'FFC00000' } } });
+      ws.getColumn(1).width = 22; for (let i = 2; i <= 10; i++) ws.getColumn(i).width = i === 2 ? 13 : 14;
+      ws.getRow(1).height = 18.75; ws.getRow(3).height = 30;
+      ws.getCell('A1').value = 'Clash Matrix – Summary by Discipline'; ws.getCell('A1').font = font({ bold:true, size:14, color:{ argb:NAVY } });
+      ['Discipline (Item 1)','# Tests','New + Active','New','Active','Reviewed','Approved','Resolved','Total Clashes','% of Total'].forEach((h, i) => {
+        const c = ws.getCell(3, i + 1); c.value = h; c.fill = solid(NAVY); c.font = font({ bold:true, size:11, color:{ argb:'FFFFFFFF' } }); c.alignment = { horizontal:'center', vertical:'middle', wrapText:true }; c.border = box();
+      });
+      const keys = ['open','new','active','reviewed','approved','resolved','total'];
+      const val = (rows, k) => rows.reduce((s, { d }) => s + (k === 'open' ? (d.new || 0) + (d.active || 0) : (d[k] || 0)), 0);
+      const tr = 4 + info.length, grand = val(sortedTests.map(d => ({ d })), 'total');
+      info.forEach((o, i) => {
+        const r = 4 + i, set = (col, v, o2) => { const c = ws.getCell(r, col); c.value = v; c.font = font(o2 || { size:11 }); c.alignment = { horizontal:col === 1 ? 'left' : 'center' }; c.border = box(); return c; };
+        set(1, o.c, { bold:true, size:11 });
+        set(2, { formula:`COUNTA(${o.c}!A2:A${o.last})`, result:o.rows.length });
+        'GHIJKLM'.split('').forEach((L, k) => set(3 + k, { formula:`${o.c}!${L}${o.tr}`, result:val(o.rows, keys[k]) }));
+        set(10, { formula:`I${r}/$I$${tr}`, result:grand ? val(o.rows, 'total') / grand : 0 }).numFmt = '0.0%';
+      });
+      const tot = (col, f, res, fmt) => { const c = ws.getCell(tr, col); c.value = col === 1 ? 'TOTAL' : { formula:f, result:res }; c.fill = solid(NAVY); c.font = font({ bold:true, size:11, color:{ argb:'FFFFFFFF' } }); c.alignment = { horizontal:col === 1 ? 'left' : 'center' }; c.border = box(); if (fmt) c.numFmt = fmt; };
+      tot(1); tot(2, `SUM(B4:B${tr - 1})`, sortedTests.length);
+      'CDEFGHI'.split('').forEach((L, k) => tot(3 + k, `SUM(${L}4:${L}${tr - 1})`, val(sortedTests.map(d => ({ d })), keys[k])));
+      tot(10, `SUM(J4:J${tr - 1})`, grand ? 1 : 0, '0.0%');
+      ws.getCell(tr + 2, 1).value = 'Check vs. original sheet (Clash Tests):';
+      ws.getCell(tr + 2, 3).value = { formula:`'Clash Tests'!M${totRow}`, result:grand };
+      ws.getCell(tr + 2, 4).value = { formula:`IF(C${tr + 2}=I${tr},"OK – matches","MISMATCH")`, result:'OK – matches' };
+      ws.getCell(tr + 3, 1).value = 'Note: each test is placed in the sheet of its Item 1 department; the "#" column keeps the number from the Clash Tests sheet.';
+      ws.getCell(tr + 3, 1).font = font({ size:9, italic:true });
+    }
+
     // ── Sheet 3: Notes ──
     const notesKeys = Object.keys(cellNotes);
     if (notesKeys.length) {
@@ -2990,8 +3162,7 @@ ${notesHTML}
       const zip = await JSZip.loadAsync(buf);
       let wbx = await zip.file('xl/workbook.xml').async('string');
       if (!/_xlnm\._FilterDatabase/.test(wbx)) {
-        const idx = wb.worksheets.findIndex(w => w.name === 'Clash Tests');
-        const dn = `<definedNames><definedName name="_xlnm._FilterDatabase" localSheetId="${idx}" hidden="1">'Clash Tests'!$A$1:$O$${lastRow2}</definedName></definedNames>`;
+        const dn = '<definedNames>' + fdbList.map(f => `<definedName name="_xlnm._FilterDatabase" localSheetId="${wb.worksheets.findIndex(w => w.name === f.name)}" hidden="1">'${f.name}'!$A$1:$O$${f.last}</definedName>`).join('') + '</definedNames>';
         wbx = /<definedNames>/.test(wbx)
           ? wbx.replace('<definedNames>', dn.replace('</definedNames>', '').replace('<definedNames>', '<definedNames>'))
           : wbx.replace('</sheets>', '</sheets>' + dn);
