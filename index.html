@@ -816,10 +816,10 @@
 
     <div class="upload-zone" id="uploadZone" style="margin-top:16px;">
       <span class="upload-icon">⚡</span>
-      <h2>DROP NAVISWORKS HTML REPORTS HERE</h2>
-      <p>Upload <strong>multiple HTML clash reports</strong> at once — one per discipline pair.<br>
-         Supported file naming: <strong>HVAC_VS_FF.html</strong> &nbsp;|&nbsp; <strong>ARCH&STRUC.html</strong> &nbsp;|&nbsp; <strong>PLB-EL.html</strong></p>
-      <input type="file" id="fileInput" multiple accept=".html,.htm">
+      <h2>DROP NAVISWORKS CLASH REPORTS HERE</h2>
+      <p>Upload <strong>multiple HTML or XML clash reports</strong> at once — one per discipline pair (or one combined report).<br>
+         Supported: <strong>.html</strong> &nbsp;|&nbsp; <strong>.htm</strong> &nbsp;|&nbsp; <strong>.xml</strong> &nbsp;—&nbsp; e.g. <strong>HVAC_VS_FF.xml</strong> &nbsp;|&nbsp; <strong>ARCH&STRUC.html</strong> &nbsp;|&nbsp; <strong>PLB-EL.xml</strong></p>
+      <input type="file" id="fileInput" multiple accept=".html,.htm,.xml">
       <div id="fileList"></div>
     </div>
 
@@ -1069,8 +1069,8 @@
   fileInput.addEventListener('change', e => handleFiles([...e.target.files]));
 
   function handleFiles(files) {
-    const html = files.filter(f => f.name.match(/\.html?$/i));
-    if (!html.length) { showMsg('error', 'Please upload .html files exported from Navisworks Clash Detective.'); return; }
+    const html = files.filter(f => SUPPORTED_EXT.test(f.name));
+    if (!html.length) { showMsg('error', 'Please upload .html or .xml files exported from Navisworks Clash Detective.'); return; }
     html.forEach(f => { if (!uploadedFiles.find(x => x.name === f.name)) uploadedFiles.push(f); });
     // Auto-detect round from filename e.g. R01, Rev02, Round_03
     if (!document.getElementById('roundLabel').value.trim()) {
@@ -1276,7 +1276,7 @@
     if (p.length >= 2) return [norm(p[0]), norm(p[1])];
 
     // 5. Try file name with _vs_
-    const base = fName.replace(/\.html?$/i, '');
+    const base = fName.replace(SUPPORTED_EXT, '');
     p = base.split(VS_UNDERSCORE).map(s => s.trim()).filter(Boolean);
     if (p.length >= 2) {
       let d1 = p[0].replace(/^[A-Z]+_/i, '').trim();
@@ -1324,21 +1324,160 @@
     return results.length ? results : null;
   }
 
+
+  // ── File type support (HTML + all Navisworks XML flavours) ────────────────────
+  const SUPPORTED_EXT = /\.(html?|xml)$/i;
+
+  // Reads a file as text with correct encoding (UTF-8 / UTF-16 LE+BE BOM / XML-declared encoding)
+  async function readFileText(file) {
+    const buf = await file.arrayBuffer();
+    const u = new Uint8Array(buf);
+    let enc = 'utf-8';
+    if (u[0] === 0xFF && u[1] === 0xFE) enc = 'utf-16le';
+    else if (u[0] === 0xFE && u[1] === 0xFF) enc = 'utf-16be';
+    else if (u.length > 3 && u[0] !== 0 && u[1] === 0 && u[2] !== 0 && u[3] === 0) enc = 'utf-16le';
+    else if (u.length > 3 && u[0] === 0 && u[1] !== 0 && u[2] === 0 && u[3] !== 0) enc = 'utf-16be';
+    let text = new TextDecoder(enc).decode(buf);
+    if (enc === 'utf-8') {
+      const m = text.slice(0, 200).match(/<\?xml[^>]*encoding\s*=\s*["']([\w\-]+)["']/i);
+      if (m && !/^utf-?8$/i.test(m[1])) {
+        try { text = new TextDecoder(m[1].toLowerCase()).decode(buf); } catch (e) { /* keep utf-8 */ }
+      }
+    }
+    return text.replace(/^\uFEFF/, '');
+  }
+
+  const XML_TYPE_MAP = { hard: 'Hard', hard_conservative: 'Hard (Conservative)', clearance: 'Clearance', duplicate: 'Duplicate Items' };
+  const XML_STATUS_MAP = { ok: 'OK', old: 'Old', new: 'New', active: 'Active', reviewed: 'Reviewed', approved: 'Approved', resolved: 'Resolved' };
+  const prettyKey = (v, map) => {
+    const k = String(v || '').trim();
+    if (!k) return '';
+    const low = k.toLowerCase();
+    return map[low] || (k.charAt(0).toUpperCase() + k.slice(1));
+  };
+  function formatXmlTolerance(tol, units) {
+    if (tol === null || tol === undefined || String(tol).trim() === '') return '';
+    const n = parseFloat(tol);
+    return (isNaN(n) ? String(tol).trim() : String(n)) + (units ? String(units).trim() : '');
+  }
+  const decodeXmlEntities = s => decodeEntities(String(s))
+    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(parseInt(d, 10)))
+    .replace(/&apos;/g, "'");
+
+  // Intermediate test object -> same record shape produced by the HTML parser
+  function buildXmlRecord(t, fileName) {
+    const base = fileName.replace(SUPPORTED_EXT, '');
+    const testName = (t.name || '').trim() || base;
+    const c = t.counts || {};
+    const num = k => parseInt(c[k], 10) || 0;
+    const newC = num('new'), active = num('active'), reviewed = num('reviewed'), approved = num('approved'), resolved = num('resolved');
+    let total = parseInt(c.total, 10);
+    if (isNaN(total)) total = newC + active + reviewed + approved + resolved;
+    const [d1, d2] = parseDisciplines(testName, fileName);
+    const groupMatch = testName.match(/^([A-Za-z]+)_/);
+    return {
+      testName, d1, d2,
+      group: groupMatch ? groupMatch[1].toUpperCase() : '',
+      tolerance: formatXmlTolerance(t.tolerance, t.units),
+      type: prettyKey(t.type, XML_TYPE_MAP),
+      status: prettyKey(t.status, XML_STATUS_MAP),
+      total, new: newC, active, reviewed, approved, resolved
+    };
+  }
+
+  // Preferred path: real XML DOM (handles namespaces, nesting, entities)
+  function xmlTestsFromDOM(doc) {
+    const ln = el => (el.localName || el.nodeName || '').toLowerCase();
+    const getAttr = (el, k) => {
+      for (const a of el.attributes) if ((a.localName || a.name).toLowerCase() === k || a.name.toLowerCase() === k) return a.value;
+      return null;
+    };
+    const tests = [...doc.getElementsByTagNameNS('*', 'clashtest')];
+    return tests.map(el => {
+      // units from nearest <batchtest>/<exchange> ancestor
+      let units = null;
+      for (let p = el.parentNode; p && p.nodeType === 1 && units === null; p = p.parentNode) units = getAttr(p, 'units');
+      let counts = null;
+      const summary = [...el.children].find(ch => ln(ch) === 'summary');
+      if (summary) {
+        counts = {};
+        ['total', 'new', 'active', 'reviewed', 'approved', 'resolved'].forEach(k => {
+          let v = getAttr(summary, k);
+          if (v === null) { const ch = [...summary.children].find(x => ln(x) === k); if (ch) v = ch.textContent.trim(); }
+          if (v !== null) counts[k] = v;
+        });
+      }
+      if (!counts || !Object.keys(counts).length) {
+        // No <summary> (e.g. exported test definitions) -> count leaf <clashresult> by status
+        counts = { total: 0, new: 0, active: 0, reviewed: 0, approved: 0, resolved: 0 };
+        [...el.getElementsByTagNameNS('*', 'clashresult')].forEach(r => {
+          if (r.getElementsByTagNameNS('*', 'clashresult').length) return;   // group node -> count its children
+          const st = (getAttr(r, 'status') || '').toLowerCase();
+          counts.total++;
+          if (st in counts && st !== 'total') counts[st]++;
+        });
+      }
+      return { name: getAttr(el, 'name'), tolerance: getAttr(el, 'tolerance'), units,
+               type: getAttr(el, 'test_type') || getAttr(el, 'type'), status: getAttr(el, 'status'), counts };
+    });
+  }
+
+  // Fallback path: tolerant regex scan for malformed / non-strict XML
+  function xmlTestsFromRegex(text) {
+    const unitsM = text.match(/<batchtest\b[^>]*\bunits\s*=\s*"([^"]*)"/i) || text.match(/<exchange\b[^>]*\bunits\s*=\s*"([^"]*)"/i);
+    const units = unitsM ? unitsM[1] : null;
+    const attrsOf = str => { const o = {}; str.replace(/([\w:.\-]+)\s*=\s*"([^"]*)"/g, (_, k, v) => { o[k.toLowerCase()] = decodeXmlEntities(v); return ''; }); return o; };
+    const tests = [];
+    text.split(/(?=<clashtest\b)/i).forEach(chunk => {
+      const m = chunk.match(/^<clashtest\b([^>]*)>/i);
+      if (!m) return;
+      const a = attrsOf(m[1]);
+      let counts = null;
+      const sm = chunk.match(/<summary\b([^>]*)>/i);
+      if (sm) counts = attrsOf(sm[1]);
+      if (!counts || !Object.keys(counts).length) {
+        counts = { total: 0, new: 0, active: 0, reviewed: 0, approved: 0, resolved: 0 };
+        chunk.replace(/<clashresult\b[^>]*\bstatus\s*=\s*"([^"]*)"/gi, (_, st) => {
+          st = st.toLowerCase(); counts.total++; if (st in counts && st !== 'total') counts[st]++; return '';
+        });
+      }
+      tests.push({ name: a.name, tolerance: a.tolerance, units, type: a.test_type || a.type, status: a.status, counts });
+    });
+    return tests;
+  }
+
+  // Navisworks Clash Detective XML (report XML, per-test XML, combined/batch XML, exported tests XML)
+  function parseClashXML(text, name) {
+    text = text.replace(/^\uFEFF/, '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '');
+    let tests = null;
+    try {
+      const doc = new DOMParser().parseFromString(text, 'application/xml');
+      if (!doc.getElementsByTagName('parsererror').length) tests = xmlTestsFromDOM(doc);
+    } catch (e) { /* fall through to regex */ }
+    if (!tests || !tests.length) tests = xmlTestsFromRegex(text);
+    const results = tests.map(t => buildXmlRecord(t, name));
+    return results.length ? results : null;
+  }
+
+  // Single entry point: detects HTML vs XML by extension/content and falls back to the other parser
+  function parseClashFile(text, name) {
+    const looksXml = /\.xml$/i.test(name) || (/^\s*<\?xml/i.test(text) && !/testSummaryTable/i.test(text));
+    let res = looksXml ? parseClashXML(text, name) : parseClashHTML(text, name);
+    if (!res) res = looksXml ? parseClashHTML(text, name) : parseClashXML(text, name);
+    return res;
+  }
+
   // ── Build Matrix ──────────────────────────────────────────────────────────────
   async function buildMatrix() {
     parsedData = [];
-    const reads = uploadedFiles.map(f => new Promise((res, rej) => {
-      const r = new FileReader();
-      r.onload  = e => res({ name: f.name, html: e.target.result });
-      r.onerror = () => rej(f.name);
-      r.readAsText(f, 'utf-8');
-    }));
+    const reads = uploadedFiles.map(f => readFileText(f).then(t => ({ name: f.name, html: t })).catch(() => Promise.reject(f.name)));
     let raw;
     try { raw = await Promise.all(reads); } catch(e) { showMsg('error', `Failed to read file: ${e}`); return; }
     const errors = [], unknownFiles = [];
     const seenDiscs = [];
     raw.forEach(({ name, html }) => {
-      const results = parseClashHTML(html, name);
+      const results = parseClashFile(html, name);
       if (!results) errors.push(name);
       else results.forEach(d => {
         if (d.d2 === '__UNKNOWN__') unknownFiles.push(`"${d.testName}" (${name})`);
@@ -1980,7 +2119,7 @@ ${notesHTML}
         : '';
       const uploadStatus = r.parsedData.length
         ? `✔ ${r.parsedData.length} test(s) loaded`
-        : 'Click or drop Navisworks HTML files';
+        : 'Click or drop Navisworks HTML / XML files';
       const loadedClass = r.parsedData.length ? 'loaded' : '';
       return `
         <div class="round-card" id="rcard-${r.id}">
@@ -1996,7 +2135,7 @@ ${notesHTML}
             ondragleave="this.style.borderColor=''"
             ondrop="event.preventDefault();handleRoundDrop(${r.id},event)">
             ${uploadStatus}
-            <input type="file" id="rfi-${r.id}" multiple accept=".html,.htm"
+            <input type="file" id="rfi-${r.id}" multiple accept=".html,.htm,.xml"
               onchange="handleRoundFiles(${r.id},this.files)">
           </div>
           ${filesList ? `<div class="round-files-list">${filesList}</div>` : ''}
@@ -2014,12 +2153,12 @@ ${notesHTML}
   }
 
   function handleRoundDrop(id, event) {
-    const files = [...event.dataTransfer.files].filter(f => f.name.match(/\.html?$/i));
+    const files = [...event.dataTransfer.files].filter(f => SUPPORTED_EXT.test(f.name));
     if (files.length) processRoundFiles(id, files);
   }
 
   function handleRoundFiles(id, fileList) {
-    const files = [...fileList].filter(f => f.name.match(/\.html?$/i));
+    const files = [...fileList].filter(f => SUPPORTED_EXT.test(f.name));
     if (files.length) processRoundFiles(id, files);
   }
 
@@ -2027,16 +2166,11 @@ ${notesHTML}
     const round = rounds.find(r => r.id === id);
     if (!round) return;
     round.files = files;
-    const reads = files.map(f => new Promise((res, rej) => {
-      const reader = new FileReader();
-      reader.onload = e => res({ name: f.name, html: e.target.result });
-      reader.onerror = () => rej(f.name);
-      reader.readAsText(f, 'utf-8');
-    }));
+    const reads = files.map(f => readFileText(f).then(t => ({ name: f.name, html: t })).catch(() => Promise.reject(f.name)));
     Promise.all(reads).then(rawFiles => {
       const allData = [];
       rawFiles.forEach(({ name, html }) => {
-        const results = parseClashHTML(html, name);
+        const results = parseClashFile(html, name);
         if (results) results.forEach(d => { if (d.d2 !== '__UNKNOWN__') allData.push(d); });
       });
       round.parsedData = allData;
@@ -2805,81 +2939,11 @@ ${notesHTML}
     const phase = document.getElementById('projPhase').value;
     const date = new Date().toISOString().slice(0, 10);
 
-    // ── Sheet 1: Matrix (full symmetric matrix) ──
-    const wsDM = wb.addWorksheet('Dept Matrix', { properties:{ tabColor:{ argb:'FFFF7A00' } } });
+    // ── Sheet order: 1) Clash Tests  2) Clash Matrix  3) Dept Matrix  (then dept sheets, Summary, Notes) ──
+    // The old plain "Matrix" sheet is no longer exported.
     const wsCT = wb.addWorksheet('Clash Tests');
     const wsCM = wb.addWorksheet('Clash Matrix', { properties:{ tabColor:{ argb:'FFFF7A00' } } });
-    const ws1 = wb.addWorksheet('Matrix');
-    const dispNames = disciplines.map(d => String(getDiscDisplayName(d)));
-    const longest = dispNames.reduce((m, n) => Math.max(m, n.length), 0);
-    // size the label column / header row so the FULL discipline names are visible
-    ws1.getColumn(1).width = Math.min(80, Math.max(20.83203125, Math.ceil(longest * 1.2) + 4));
-    // rotated header: Excel caps a row at 409pt, so very long names wrap onto extra lines -> widen the column for them
-    const CHARS_PER_LINE = 58;
-    const hdrLines = Math.max(1, Math.ceil(longest / CHARS_PER_LINE));
-    disciplines.forEach((_, i) => { ws1.getColumn(i + 2).width = Math.max(14.83203125, hdrLines * 3.4 + 4); });
-    ws1.getRow(1).height = Math.min(409, Math.max(56, Math.ceil(Math.min(longest, CHARS_PER_LINE) * 7.2) + 20));
-    disciplines.forEach((_, i) => { ws1.getRow(i + 2).height = 38; });
-
-    const corner = ws1.getCell(1, 1);
-    corner.value = '';
-    corner.fill = solid('FF0A0E1A');
-    corner.font = { bold:true, color:{ argb:'FF00D4FF' }, size:11, name:'Calibri' };
-    corner.alignment = { horizontal:'center', vertical:'middle' };
-    corner.border = bdr('FF1E2D45');
-    disciplines.forEach((d, di) => {
-      const c = ws1.getCell(1, di + 2);
-      c.value = dispNames[di];
-      c.fill = solid(getEC(di));
-      c.font = { bold:true, color:{ argb:'FFFFFFFF' }, size:12, name:'Calibri' };
-      c.alignment = { horizontal:'center', vertical:'bottom', textRotation:90, wrapText:true };
-      c.border = bdr('FF0A0E1A');
-    });
-    disciplines.forEach((r, ri) => {
-      const rowNum = ri + 2;
-      const la = ws1.getCell(rowNum, 1);
-      la.value = dispNames[ri];
-      la.fill = solid(getEC(ri));
-      la.font = { bold:true, color:{ argb:'FFFFFFFF' }, size:12, name:'Calibri' };
-      la.alignment = { horizontal:'left', vertical:'middle', indent:1, wrapText:true };
-      la.border = bdr('FF0A0E1A');
-      disciplines.forEach((c, ci) => {
-        const cell = ws1.getCell(rowNum, ci + 2);
-        // value for this pair (override > parsed data), identical for both triangles
-        let rawVal = null;
-        {
-          const key = overrideKey(r, c);
-          if (cellOverrides[key] !== undefined) rawVal = cellOverrides[key];
-          else {
-            const clash = getCell(r, c) || getCell(c, r);
-            rawVal = clash ? getValue(clash, currentMode, r, c) : null;
-          }
-        }
-        if (rawVal === null || rawVal === undefined || rawVal === '') {
-          cell.value = ci === ri ? '' : '–';
-          cell.fill = solid('FFCFD8DC');
-          cell.font = { bold:false, color:{ argb:'FF90A4AE' }, size:14, name:'Calibri' };
-          cell.alignment = { horizontal:'center', vertical:'middle' };
-          cell.border = thinBdr();
-        } else {
-          const v = typeof rawVal === 'number' ? rawVal : parseInt(rawVal, 10);
-          const fg = cellFg(v); const fc = fontColor(fg);
-          const hasOverride = cellOverrides[overrideKey(r, c)] !== undefined;
-          cell.value = rawVal;
-          cell.fill = solid(fg);
-          cell.font = { bold:true, color:{ argb:fc }, size:16, name:'Calibri', italic:hasOverride };
-          cell.alignment = { horizontal:'center', vertical:'middle' };
-          cell.border = bdr('FF607D8B', 'thin');
-        }
-      });
-    });
-    let fr = disciplines.length + 2;           // blank spacer row
-    fr++;
-    if (proj)  ws1.getCell(fr++, 1).value = `Project: ${proj}`;
-    if (phase) ws1.getCell(fr++, 1).value = `Phase: ${phase}`;
-    const modeNames = { open:'New + Active', total:'Total Clashes', resolved:'Resolved', heatmap:'Heatmap (Open)' };
-    const hi = calcHeatIndex();
-    ws1.getCell(fr, 1).value = `Mode: ${modeNames[currentMode]||currentMode}   |   Heat Index: ${hi}/100   |   Generated by BIMZ v6.0   |   ${date}`;
+    const wsDM = wb.addWorksheet('Dept Matrix', { properties:{ tabColor:{ argb:'FFFF7A00' } } });
 
     // ── Sheet 2: Clash Tests (identical layout to Clash_Matrix_Report.xlsx) ──
     const NAVY='FF1F3864', RED='FFC00000', BLUE='FF2E75B6', GRAY='FF7F7F7F', ORANGE='FFED7D31', GREEN='FF548235';
