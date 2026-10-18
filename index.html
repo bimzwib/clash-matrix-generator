@@ -806,6 +806,7 @@
     <div class="project-info-bar">
       <input type="text" id="projName" placeholder="Project Name (e.g. CAIRO TOWER — optional)">
       <input type="text" id="projPhase" placeholder="Phase / Issue (e.g. IFC Rev.03 — optional)" oninput="renderMatrix()">
+      <input type="text" id="excelFileName" placeholder="Excel file name (e.g. Clash Matrix — empty = today's date &amp; time)" title="Name of the exported Excel file. Leave empty to use today's date and time.">
       <div style="display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 12px;min-width:130px;">
         <span style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--muted);white-space:nowrap;">ROUND</span>
         <input type="text" id="roundLabel" placeholder="R01" maxlength="6"
@@ -832,12 +833,12 @@
       <div id="exportOrderWrap" style="display:none;align-items:center;gap:8px;" title="Row order of the Clash Tests sheet in the Excel export">
         <label style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;letter-spacing:1px;color:var(--muted);white-space:nowrap;">EXCEL ORDER:</label>
         <select id="excelOrder" style="background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 12px;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">
+          <option value="open_big" selected>MOST OPEN FIRST (New+Active ▼)</option>
+          <option value="open_small">LEAST OPEN FIRST (New+Active ▲)</option>
+          <option value="group_hml">BY GROUP: H → M → L (most New+Active first)</option>
+          <option value="group_lmh">BY GROUP: L → M → H (most New+Active first)</option>
           <option value="big">LARGEST FIRST (Total ▼)</option>
           <option value="small">SMALLEST FIRST (Total ▲)</option>
-          <option value="group_hml">BY GROUP: H → M → L (largest first)</option>
-          <option value="group_lmh">BY GROUP: L → M → H (largest first)</option>
-          <option value="open_big">MOST OPEN FIRST (New+Active ▼)</option>
-          <option value="open_small">LEAST OPEN FIRST (New+Active ▲)</option>
           <option value="name">TEST NAME A–Z</option>
           <option value="file">FILE ORDER (as uploaded)</option>
         </select>
@@ -1101,6 +1102,18 @@
     if (uploadedFiles.length === 0) clearMatrix();
   }
 
+  // ── Excel file name: custom name, or today's date + time when left empty ─────────
+  function excelFileName(suffix) {
+    const el = document.getElementById('excelFileName');
+    let name = el ? el.value.trim() : '';
+    name = name.replace(/\.xlsx$/i, '').replace(/[\\/:*?"<>|]+/g, '_').replace(/\s+/g, '_');
+    if (!name) {
+      const n = new Date(), p = v => String(v).padStart(2, '0');
+      name = `Clash_Matrix_${n.getFullYear()}-${p(n.getMonth() + 1)}-${p(n.getDate())}_${p(n.getHours())}-${p(n.getMinutes())}`;
+    }
+    return name + (suffix || '') + '.xlsx';
+  }
+
   // ── Sort Mode ─────────────────────────────────────────────────────────────────
   function setSortMode(mode) {
     sortMode = mode;
@@ -1222,6 +1235,10 @@
     // (e.g. "EL-Ducts/Duct Fittings/Duct Insulations/Duct Linings")
     // Preserve it as-is — do NOT strip or reduce it
     if (trimmed.includes('/')) return trimmed;
+
+    // Category-style names "XX-Something" (e.g. "ST-Walls", "ST-Ramps", "ST-Stairs") are kept COMPLETE:
+    // the 2-letter prefix is the discipline, and stripping it would turn them into "WALLS" / "RAMPS" / "STAIRS".
+    if (/^[A-Za-z]{2}-[A-Za-z]{3,}/.test(trimmed)) return trimmed;
 
     // Strip zone/floor/project noise ONLY when what is left is a short abbreviation (HVAC, FF, EL ...).
     // A real category name such as "GS-Mechanical Equipment" or "ST-Structural Columns" is kept COMPLETE —
@@ -1408,15 +1425,39 @@
           if (v !== null) counts[k] = v;
         });
       }
+      // Real per-clash statuses (the XML may have been hand-edited, so <summary> can be stale)
+      const resStatus = r => {
+        let st = (getAttr(r, 'status') || '').trim().toLowerCase();
+        if (!st) { const rs = [...r.children].find(x => ln(x) === 'resultstatus'); if (rs) st = rs.textContent.trim().toLowerCase(); }
+        return st;
+      };
+      const tally = list => {
+        const c = { total: 0, new: 0, active: 0, reviewed: 0, approved: 0, resolved: 0 };
+        list.forEach(r => { c.total++; const st = resStatus(r); if (st in c && st !== 'total') c[st]++; });
+        return c;
+      };
+      const allRes = [...el.getElementsByTagNameNS('*', 'clashresult')];
+      const leafRes = allRes.filter(r => !r.getElementsByTagNameNS('*', 'clashresult').length);   // group node -> its children
+      const topRes = allRes.filter(r => { for (let p = r.parentNode; p && p !== el; p = p.parentNode) if (ln(p) === 'clashresult') return false; return true; });
       if (!counts || !Object.keys(counts).length) {
         // No <summary> (e.g. exported test definitions) -> count leaf <clashresult> by status
-        counts = { total: 0, new: 0, active: 0, reviewed: 0, approved: 0, resolved: 0 };
-        [...el.getElementsByTagNameNS('*', 'clashresult')].forEach(r => {
-          if (r.getElementsByTagNameNS('*', 'clashresult').length) return;   // group node -> count its children
-          const st = (getAttr(r, 'status') || '').toLowerCase();
-          counts.total++;
-          if (st in counts && st !== 'total') counts[st]++;
+        counts = tally(leafRes);
+      } else {
+        // <summary> exists. The file usually lists only SOME clashes (e.g. only the open ones), so we keep the
+        // summary numbers and move each listed clash from its original status (<resultstatus>) to the status
+        // written in its status="" attribute (the one edited by hand).
+        const KEYS = ['new', 'active', 'reviewed', 'approved', 'resolved'];
+        const c = { total: parseInt(counts.total, 10) || 0 };
+        ['total', ...KEYS].forEach(k => { c[k] = parseInt(counts[k], 10) || 0; });
+        topRes.forEach(r => {
+          const now = (getAttr(r, 'status') || '').trim().toLowerCase();
+          const rsEl = [...r.children].find(x => ln(x) === 'resultstatus');
+          const orig = rsEl ? rsEl.textContent.trim().toLowerCase() : '';
+          if (!KEYS.includes(now) || !KEYS.includes(orig) || now === orig) return;
+          if (c[orig] > 0) c[orig]--;
+          c[now]++;
         });
+        counts = c;
       }
       return { name: getAttr(el, 'name'), tolerance: getAttr(el, 'tolerance'), units,
                type: getAttr(el, 'test_type') || getAttr(el, 'type'), status: getAttr(el, 'status'), counts };
@@ -1436,11 +1477,25 @@
       let counts = null;
       const sm = chunk.match(/<summary\b([^>]*)>/i);
       if (sm) counts = attrsOf(sm[1]);
-      if (!counts || !Object.keys(counts).length) {
-        counts = { total: 0, new: 0, active: 0, reviewed: 0, approved: 0, resolved: 0 };
-        chunk.replace(/<clashresult\b[^>]*\bstatus\s*=\s*"([^"]*)"/gi, (_, st) => {
-          st = st.toLowerCase(); counts.total++; if (st in counts && st !== 'total') counts[st]++; return '';
+      const live = { total: 0, new: 0, active: 0, reviewed: 0, approved: 0, resolved: 0 };
+      chunk.replace(/<clashresult\b[^>]*\bstatus\s*=\s*"([^"]*)"/gi, (_, st) => {
+        st = st.trim().toLowerCase(); live.total++; if (st in live && st !== 'total') live[st]++; return '';
+      });
+      if (!counts || !Object.keys(counts).length) counts = live;
+      else {
+        // keep summary numbers, move each listed clash from its original <resultstatus> to its edited status="" value
+        const KEYS = ['new', 'active', 'reviewed', 'approved', 'resolved'];
+        const c = {}; ['total', ...KEYS].forEach(k => { c[k] = parseInt(counts[k], 10) || 0; });
+        chunk.split(/(?=<clashresult\b)/i).slice(1).forEach(part => {
+          const sm2 = part.match(/^<clashresult\b[^>]*\bstatus\s*=\s*"([^"]*)"/i);
+          const rm = part.match(/<resultstatus>\s*([^<]*?)\s*<\/resultstatus>/i);
+          if (!sm2 || !rm) return;
+          const now = sm2[1].trim().toLowerCase(), orig = rm[1].toLowerCase();
+          if (!KEYS.includes(now) || !KEYS.includes(orig) || now === orig) return;
+          if (c[orig] > 0) c[orig]--;
+          c[now]++;
         });
+        counts = c;
       }
       tests.push({ name: a.name, tolerance: a.tolerance, units, type: a.test_type || a.type, status: a.status, counts });
     });
@@ -2094,7 +2149,7 @@ ${notesHTML}
     ws2['!rows'] = [{ hpt:32 }];
     XLSX.utils.book_append_sheet(wb, ws2, 'Clash Tests');
 
-    XLSX.writeFile(wb, `${proj.replace(/\s+/g,'_')}_${date}.xlsx`, { bookType:'xlsx', type:'binary', cellStyles:true });
+    XLSX.writeFile(wb, excelFileName(), { bookType:'xlsx', type:'binary', cellStyles:true });
   }
 
   // ── Multi-Round Compare ───────────────────────────────────────────────────────
@@ -2969,21 +3024,22 @@ ${notesHTML}
     });
     const leftCols = [3, 4, 5];   // Test Name / Item 1 / Item 2 (1-based)
     // Row order chosen in the EXCEL ORDER selector (stable sort: ties keep file order)
-    const orderMode = (document.getElementById('excelOrder') || {}).value || 'big';
+    const orderMode = (document.getElementById('excelOrder') || {}).value || 'open_big';
     const T = d => d.total || 0, O = d => (d.new || 0) + (d.active || 0);
     const gRank = (d, seq) => { const i = seq.indexOf((d.group || '').toUpperCase()); return i < 0 ? seq.length : i; };
     const byTotalDesc = (a, b) => T(b) - T(a);
+    const byOpenDesc = (a, b) => O(b) - O(a) || T(b) - T(a);
     const comparators = {
       big:        byTotalDesc,
       small:      (a, b) => T(a) - T(b),
-      group_hml:  (a, b) => gRank(a, ['H','M','L']) - gRank(b, ['H','M','L']) || byTotalDesc(a, b),
-      group_lmh:  (a, b) => gRank(a, ['L','M','H']) - gRank(b, ['L','M','H']) || byTotalDesc(a, b),
-      open_big:   (a, b) => O(b) - O(a) || byTotalDesc(a, b),
+      group_hml:  (a, b) => gRank(a, ['H','M','L']) - gRank(b, ['H','M','L']) || byOpenDesc(a, b),
+      group_lmh:  (a, b) => gRank(a, ['L','M','H']) - gRank(b, ['L','M','H']) || byOpenDesc(a, b),
+      open_big:   byOpenDesc,
       open_small: (a, b) => O(a) - O(b) || T(a) - T(b),
       name:       (a, b) => String(a.testName).localeCompare(String(b.testName), undefined, { numeric:true, sensitivity:'base' }),
       file:       () => 0
     };
-    const sortedTests = [...parsedData].sort(comparators[orderMode] || byTotalDesc);
+    const sortedTests = [...parsedData].sort(comparators[orderMode] || byOpenDesc);
     sortedTests.forEach((d, ri) => {
       const rowNum = ri + 2;
       const g = (d.group || '').toUpperCase();
@@ -3117,7 +3173,7 @@ ${notesHTML}
     // ── Clash Matrix (category vs category, driven by the B1 dropdown) ──
     {
       const ws = wsCM;
-      const tot = {}; sortedTests.forEach(t => [dn1(t), dn2(t)].forEach(n => { tot[n] = (tot[n] || 0) + mv(t, 'Total Clashes'); }));
+      const tot = {}; sortedTests.forEach(t => [dn1(t), dn2(t)].forEach(n => { tot[n] = (tot[n] || 0) + mv(t, 'New + Active'); }));
       const cats = disciplines.map(d => String(getDiscDisplayName(d))).sort((a, b) => (tot[b] || 0) - (tot[a] || 0));
       const pair = {}; sortedTests.forEach(t => { const k = dn1(t) + '||' + dn2(t); pair[k] = (pair[k] || 0) + mv(t, 'New + Active'); });
       topBar(ws, 'F', 'Pick the metric from the dropdown (B1). Value = clashes between the row category and the column category (both directions).');
@@ -3237,7 +3293,7 @@ ${notesHTML}
     const blob = new Blob([buf], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `${proj2.replace(/\s+/g,'_')}_v6_${date}.xlsx`;
+    a.download = excelFileName();
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   }
@@ -3850,7 +3906,7 @@ ${notesHTML}
       });
     });
     XLSX.utils.book_append_sheet(wb, ws, 'Clash Tests');
-    XLSX.writeFile(wb, `${proj.replace(/\s+/g,'_')}_ClashTests_${date}.xlsx`, { bookType:'xlsx', type:'binary', cellStyles:true });
+    XLSX.writeFile(wb, excelFileName(), { bookType:'xlsx', type:'binary', cellStyles:true });
   }
 
   // ── Per-Layout Print Functions ────────────────────────────────────────────────
